@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>儀表板 - 社區管理系統</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    :root{--primary-color:#1a1a1a;--secondary-color:#2d2d2d;--accent-color:#ffd700;--text-primary:#fff;--text-secondary:#b0b0b0}
+    *{box-sizing:border-box} html,body{margin:0}
+    body{font-family:'Roboto',sans-serif;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));color:var(--text-primary)}
+    .hidden{display:none!important}
+
+    .sidebar{width:280px;background:rgba(45,45,45,.95);backdrop-filter:blur(8px);border-right:2px solid var(--accent-color);position:fixed;inset:0 auto 0 0;overflow:auto;padding:2rem 0;transition:.3s}
+    .sidebar.collapsed{transform:translateX(-100%)}
+    .sidebar.open{transform:translateX(0)}
+    .sidebar-header{padding:0 2rem 1.5rem;border-bottom:1px solid rgba(255,215,0,.3);margin-bottom:1.5rem}
+    .sidebar-title{color:var(--accent-color);font-weight:700;font-size:1.3rem}
+    .user-info{display:flex;gap:12px;align-items:center;margin-top:10px}
+    .user-avatar{width:40px;height:40px;border-radius:50%;background:var(--accent-color);color:#222;display:flex;align-items:center;justify-content:center;font-weight:800}
+    .nav-menu{list-style:none;margin:0;padding:0}
+    .nav-link{display:flex;gap:12px;align-items:center;padding:12px 20px;color:var(--text-primary);text-decoration:none;border-left:3px solid transparent;transition:.2s}
+    .nav-link:hover,.nav-link.active{background:rgba(255,215,0,.1);border-left-color:var(--accent-color);color:var(--accent-color)}
+
+    .main{margin-left:280px;min-height:100vh}
+    header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--primary-color);border-bottom:1px solid rgba(255,215,0,.2)}
+    .page-title{display:flex;gap:8px;align-items:center;color:var(--accent-color);font-weight:700}
+    .menu{cursor:pointer}
+    .header-actions{display:flex;gap:8px}
+    .header-actions button{display:flex;gap:6px;align-items:center;border:none;border-radius:8px;padding:8px 12px;background:var(--accent-color);color:#222;cursor:pointer;font-weight:600}
+    .header-actions button:hover{filter:brightness(.95)}
+    .content{padding:16px}
+
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .card{background:rgba(45,45,45,.85);border:1px solid rgba(255,215,0,.25);border-radius:14px;padding:14px}
+    .stat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+    .stat-value{font-size:1.8rem;font-weight:800}
+    .muted{color:var(--text-secondary)}
+    .section-title{display:flex;gap:8px;align-items:center;color:var(--accent-color);margin-bottom:10px}
+
+    .announcement-list{display:flex;flex-direction:column;gap:10px}
+    .announcement-item{background:rgba(255,255,255,.06);border-left:4px solid var(--accent-color);border-radius:10px;padding:12px}
+    .announcement-title{font-weight:700;margin-bottom:6px}
+    .announcement-meta{display:flex;justify-content:space-between;color:var(--text-secondary);font-size:.9rem}
+
+    .quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+    .action{background:rgba(45,45,45,.85);border:1px solid rgba(255,215,0,.25);border-radius:12px;padding:16px;text-align:center;cursor:pointer}
+
+    @media (max-width:768px){
+      .main{margin-left:0}
+      .sidebar{transform:translateX(-100%)}
+      .sidebar.open{transform:translateX(0)}
+      header{position:sticky;top:0;z-index:20}
+    }
+  </style>
+</head>
+<body>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">社區管理系統</div>
+      <div class="user-info">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div>
+          <div id="userName">載入中...</div>
+          <div id="userRole" class="muted">住戶</div>
+        </div>
+      </div>
+    </div>
+    <ul class="nav-menu" id="navMenu">
+      <li><a href="#" class="nav-link active" data-section="dashboard"><span class="material-icons">dashboard</span> 儀表板</a></li>
+      <li><a href="#" class="nav-link" data-section="announcements"><span class="material-icons">campaign</span> 公告/投票</a></li>
+      <li><a href="#" class="nav-link" data-section="maintenance"><span class="material-icons">build</span> 設備/維護</a></li>
+      <li><a href="#" class="nav-link" data-section="finance"><span class="material-icons">account_balance</span> 管理費/收支</a></li>
+      <li><a href="#" class="nav-link" data-section="residents"><span class="material-icons">people</span> 住戶/人員</a></li>
+      <li><a href="#" class="nav-link" data-section="visitors"><span class="material-icons">how_to_reg</span> 訪客/包裹</a></li>
+      <li><a href="#" class="nav-link" data-section="meetings"><span class="material-icons">event</span> 會議/活動</a></li>
+      <li><a href="#" class="nav-link" data-section="emergencies"><span class="material-icons">emergency</span> 緊急</a></li>
+    </ul>
+  </nav>
+
+  <main class="main" id="main">
+    <header>
+      <div class="page-title">
+        <span class="material-icons menu" onclick="toggleSidebar()">menu</span>
+        <span id="pageTitle">儀表板</span>
+      </div>
+      <div class="header-actions">
+        <button onclick="window.location.href='admin.html'"><span class="material-icons">admin_panel_settings</span> 進入後台</button>
+        <button onclick="logout()"><span class="material-icons">logout</span> 登出</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <section id="dashboardSection">
+        <div class="stats">
+          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">campaign</span><div class="stat-value" id="announcementCount">0</div></div><div class="muted">本月公告</div></div>
+          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">build</span><div class="stat-value" id="maintenanceCount">0</div></div><div class="muted">待處理維修</div></div>
+          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">people</span><div class="stat-value" id="residentCount">0</div></div><div class="muted">住戶總數</div></div>
+          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">event</span><div class="stat-value" id="eventCount">0</div></div><div class="muted">本月活動</div></div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h2 class="section-title"><span class="material-icons">campaign</span> 最新公告</h2>
+          <div class="announcement-list" id="recentAnnouncements"><div class="muted">載入中...</div></div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h2 class="section-title"><span class="material-icons">flash_on</span> 快速操作</h2>
+          <div class="quick">
+            <div class="action" data-section="maintenance"><div class="material-icons">build</div><h3>報修設備</h3></div>
+            <div class="action" data-section="visitors"><div class="material-icons">how_to_reg</div><h3>訪客登記</h3></div>
+            <div class="action" data-section="finance"><div class="material-icons">account_balance</div><h3>查看帳單</h3></div>
+            <div class="action" data-section="meetings"><div class="material-icons">event</div><h3>會議記錄</h3></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="dynamicContent" class="hidden"></section>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://oyydhfvgtmghvnbkvczr.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWRoZnZndG1naHZuYmt2Y3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTMwMTIsImV4cCI6MjA3MzE2OTAxMn0.fgz_Vl7bZ1rtrttOAQcTlymMgHfhiY2NDo3qEnBT1og";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser=null, currentSection='dashboard';
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      initAuth();
+      bindNav();
+    });
+
+    function toggleSidebar(){
+      const sb=document.getElementById('sidebar');
+      if (window.innerWidth<=768) sb.classList.toggle('open');
+      else sb.classList.toggle('collapsed');
+    }
+
+    function bindNav(){
+      // left sidebar links
+      document.querySelectorAll('.nav-link').forEach(a=>{
+        a.addEventListener('click',(e)=>{
+          e.preventDefault();
+          const sec=a.dataset.section;
+          switchSection(sec);
+        });
+      });
+      // quick actions
+      document.querySelectorAll('.action').forEach(x=>{
+        x.addEventListener('click',()=>switchSection(x.dataset.section));
+      });
+    }
+
+    function switchSection(section){
+      document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+      const active = document.querySelector(`.nav-link[data-section="${section}"]`);
+      if (active) active.classList.add('active');
+
+      const titles={dashboard:'儀表板',announcements:'公告/投票',maintenance:'設備/維護',finance:'管理費/收支',residents:'住戶/人員',visitors:'訪客/包裹',meetings:'會議/活動',emergencies:'緊急'};
+      document.getElementById('pageTitle').textContent = titles[section] || '儀表板';
+
+      const dash = document.getElementById('dashboardSection');
+      const dyn  = document.getElementById('dynamicContent');
+      if (section==='dashboard'){ dash.classList.remove('hidden'); dyn.classList.add('hidden'); currentSection='dashboard'; return; }
+
+      dash.classList.add('hidden'); dyn.classList.remove('hidden'); currentSection=section;
+      loadSection(section);
+    }
+
+    async function initAuth(){
+      const storedUser = localStorage.getItem('currentUser');
+      if (!storedUser){ window.location.href='auth.html'; return; }
+      try{
+        currentUser = JSON.parse(storedUser);
+        document.getElementById('userName').textContent = currentUser.name || '未知用戶';
+        document.getElementById('userRole').textContent = ({resident:'住戶',committee:'委員會',vendor:'廠商',admin:'管理員'})[currentUser.role] || '住戶';
+        document.getElementById('userAvatar').textContent = (currentUser.name||'U').charAt(0).toUpperCase();
+        await refreshDashboard();
+        await loadRecentAnnouncements();
+      }catch(e){ localStorage.removeItem('currentUser'); window.location.href='auth.html'; }
+    }
+
+    async function refreshDashboard(){
+      try{
+        const start = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        const { count: announcementCount } = await supabase.from('announcements').select('*',{count:'exact',head:true}).eq('status','published').gte('created_at',start);
+        document.getElementById('announcementCount').textContent = announcementCount || 0;
+        const { count: maintenanceCount } = await supabase.from('maintenance').select('*',{count:'exact',head:true}).in('status',['open','progress','pending','in_progress']);
+        document.getElementById('maintenanceCount').textContent = maintenanceCount || 0;
+        const { count: residentCount } = await supabase.from('residents').select('*',{count:'exact',head:true});
+        document.getElementById('residentCount').textContent = residentCount || 0;
+        const { count: eventCount } = await supabase.from('meetings').select('*',{count:'exact',head:true}).gte('time',start);
+        document.getElementById('eventCount').textContent = eventCount || 0;
+      }catch(e){ console.error(e); }
+    }
+
+    async function loadRecentAnnouncements(){
+      try{
+        const { data, error } = await supabase.from('announcements').select('id,title,content,created_at,author,status').eq('status','published').order('created_at',{ascending:false}).limit(5);
+        const box = document.getElementById('recentAnnouncements');
+        if (error) throw error;
+        if (!data || !data.length){ box.innerHTML='<div class="announcement-item">暫無公告</div>'; return; }
+        box.innerHTML = data.map(a=>`
+          <div class="announcement-item">
+            <div class="announcement-title">${a.title||''}</div>
+            <div class="muted">${(a.content||'').slice(0,150)}${(a.content||'').length>150?'...':''}</div>
+            <div class="announcement-meta">
+              <span>發布者: ${a.author||'系統'}</span>
+              <span>${new Date(a.created_at).toLocaleDateString('zh-TW')}</span>
+            </div>
+          </div>`).join('');
+      }catch(e){
+        console.error(e);
+        document.getElementById('recentAnnouncements').innerHTML = '<div class="announcement-item">公告載入失敗</div>';
+      }
+    }
+
+    function loadSection(section){
+      const meta = {announcements:['campaign','公告管理'],maintenance:['build','維修管理'],finance:['account_balance','財務管理'],residents:['people','住戶管理'],visitors:['how_to_reg','訪客管理'],meetings:['event','會議管理'],emergencies:['emergency','緊急服務']}[section] || ['dashboard','功能'];
+      const dyn = document.getElementById('dynamicContent');
+      dyn.innerHTML = `
+        <div class="card">
+          <h2 class="section-title"><span class="material-icons">${meta[0]}</span>${meta[1]}</h2>
+          <div id="${section}Section"><div class="muted">載入中...</div></div>
+        </div>`;
+
+      switch(section){
+        case 'announcements': loadAnnouncements(); break;
+        case 'maintenance': loadMaintenance(); break;
+        case 'finance': loadFinance(); break;
+        case 'residents': loadResidents(); break;
+        case 'visitors': loadVisitors(); break;
+        case 'meetings': loadMeetings(); break;
+        case 'emergencies': loadEmergencies(); break;
+        default: document.getElementById(section+'Section').innerHTML='<div class="muted">此功能尚未實作</div>';
+      }
+    }
+
+    async function loadAnnouncements(){
+      const el=document.getElementById('announcementsSection');
+      try{
+        const { data, error } = await supabase.from('announcements').select('title,content,author,created_at').order('created_at',{ascending:false}).limit(6);
+        if (error) throw error;
+        el.innerHTML = (data||[]).map(a=>`<div class="announcement-item"><div class="announcement-title">${a.title}</div><div class="muted">${(a.content||'').slice(0,100)}...</div><div class="announcement-meta"><span>作者:${a.author||'-'}</span><span>${new Date(a.created_at).toLocaleDateString('zh-TW')}</span></div></div>`).join('') || '<div class="announcement-item">暫無公告</div>';
+      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">公告載入失敗</div>'; }
+    }
+
+    async function loadMaintenance(){
+      const el=document.getElementById('maintenanceSection');
+      try{
+        const { data, error } = await supabase.from('maintenance').select('equipment,item,status,handler,cost,created_at').order('created_at',{ascending:false}).limit(6);
+        if (error) throw error;
+        el.innerHTML = (data||[]).map(m=>`<div class="announcement-item"><div class="announcement-title">${m.equipment} - ${m.item}</div><div class="muted">狀態:${m.status} / 費用:$${m.cost}</div><div class="announcement-meta"><span>處理人:${m.handler||'未指派'}</span><span>${new Date(m.created_at).toLocaleDateString('zh-TW')}</span></div></div>`).join('') || '<div class="announcement-item">暫無維修紀錄</div>';
+      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">維修資料載入失敗</div>'; }
+    }
+
+    async function loadFinance(){
+      const el=document.getElementById('financeSection');
+      try{
+        const { data, error } = await supabase.from('fees').select('room,amount,due,paid').order('due',{ascending:true}).limit(10);
+        if (error) throw error;
+        el.innerHTML = (data||[]).map(f=>`<div class="announcement-item"><div class="announcement-title">房號 ${f.room}</div><div class="muted">金額:$${f.amount}　到期日:${new Date(f.due).toLocaleDateString('zh-TW')}</div><div class="announcement-meta"><span>狀態:${f.paid?'已繳':'未繳'}</span></div></div>`).join('') || '<div class="announcement-item">暫無財務紀錄</div>';
+      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">財務資料載入失敗</div>'; }
+    }
+
+    async function loadResidents(){
+      const el=document.getElementById('residentsSection');
+      try{
+        const { data, error } = await supabase.from('residents').select('name,room,phone,email,role,created_at').order('created_at',{ascending:false}).limit(20);
+        if (error) throw error;
+        el.innerHTML = (data||[]).map(r=>`<div class="announcement-item"><div class="announcement-title">${r.name} (${r.room})</div><div class="muted">電話:${r.phone||'-'} / Email:${r.email||'-'}</div><div class="announcement-meta"><span>角色:${r.role}</span><span>${new Date(r.created_at).toLocaleDateString('zh-TW')}</span></div></div>`).join('') || '<div class="announcement-item">暫無住戶資料</div>';
+      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">住戶資料載入失敗</div>'; }
+    }
+
+    async function loadVisitors(){
+      const el=document.getElementById('visitorsSection');
+      try{
+        const { data, error } = await supabase.from('visitors').select('name,room,in,out').order('created_at',{ascending:false}).limit(10);
+        if (error) throw error;
+        el.innerHTML = (data||[]).map(v=>`<div class="announcement-item"><div class="announcement-title">${v.name} (房號:${v.room})</div><div class="muted">進入:${new Date(v.in).toLocaleString('zh-TW')} / 離開:${v.out?new Date(v.out).toLocaleString('zh-TW'):'-'}</div></div>`).join('') || '<div class="announcement-item">暫無訪客紀錄</div>';
+      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">訪客資料載入失敗</div>'; }
+    }
+
+    async function loadMeetings(){
+      const el=document.getElementById('meetingsSection');
+      try{
+        const { data, error } = await supabase.from('meetings').select('topic,time,location,notes').order('time',{ascending:false}).limit(10);
+        if (error) throw error;
+        el.innerHTML = (data||[]).map(m=>`<div class="announcement-item"><div class="announcement-title">${m.topic}</div><div class="muted">${m.notes||''}</div><div class="announcement-meta"><span>地點:${m.location}</span><span>${new Date(m.time).toLocaleString('zh-TW')}</span></div></div>`).join('') || '<div class="announcement-item">暫無會議資料</div>';
+      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">會議資料載入失敗</div>'; }
+    }
+
+    async function loadEmergencies(){
+      const el=document.getElementById('emergenciesSection');
+      try{
+        const { data, error } = await supabase.from('emergencies').select('type,time,by,note').order('time',{ascending:false}).limit(20);
+        if (error) throw error;
+        el.innerHTML = (data||[]).map(x=>`<div class="announcement-item"><div class="announcement-title">${x.type}</div><div class="muted">${x.note||''}</div><div class="announcement-meta"><span>使用者:${x.by||'-'}</span><span>${new Date(x.time).toLocaleString('zh-TW')}</span></div></div>`).join('') || '<div class="announcement-item">暫無緊急紀錄</div>';
+      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">緊急資料載入失敗</div>'; }
+    }
+
+    function logout(){ localStorage.removeItem('currentUser'); window.location.href='index.html'; }
+
+    
+  </script>
+</body>
+</html>

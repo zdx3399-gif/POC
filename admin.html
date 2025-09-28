@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>後台管理（可編輯）- 社區管理系統</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    :root{
+      --primary-color:#1a1a1a; --secondary-color:#2d2d2d; --accent-color:#ffd700;
+      --text-primary:#fff; --text-secondary:#b0b0b0;
+      --success:#4caf50; --danger:#f44336; --card-bg:rgba(45,45,45,.85);
+      --border: rgba(255,215,0,.25);
+    }
+    *{box-sizing:border-box} html,body{margin:0}
+    body{font-family:'Roboto',sans-serif;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));color:var(--text-primary)}
+    .hidden{display:none!important}
+
+    /* Sidebar */
+    .sidebar{width:280px;background:rgba(45,45,45,.95);backdrop-filter:blur(8px);border-right:2px solid var(--accent-color);
+      position:fixed;inset:0 auto 0 0;overflow:auto;padding:2rem 0;transition:.3s}
+    .sidebar-header{padding:0 2rem 1.5rem;border-bottom:1px solid rgba(255,215,0,.3);margin-bottom:1.5rem}
+    .sidebar-title{color:var(--accent-color);font-weight:700;font-size:1.3rem}
+    .user-info{display:flex;gap:12px;align-items:center;margin-top:10px}
+    .user-avatar{width:40px;height:40px;border-radius:50%;background:var(--accent-color);color:#222;display:flex;align-items:center;justify-content:center;font-weight:800}
+    .nav-menu{list-style:none;margin:0;padding:0}
+    .nav-link{display:flex;gap:12px;align-items:center;padding:12px 20px;color:var(--text-primary);text-decoration:none;border-left:3px solid transparent;transition:.2s}
+    .nav-link:hover,.nav-link.active{background:rgba(255,215,0,.1);border-left-color:var(--accent-color);color:var(--accent-color)}
+
+    /* Main + header (match front-end style) */
+    .main{margin-left:280px;min-height:100vh}
+    header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--primary-color);border-bottom:1px solid rgba(255,215,0,.2);position:sticky;top:0;z-index:20}
+    .page-title{display:flex;gap:8px;align-items:center;color:var(--accent-color);font-weight:700}
+    .menu{cursor:pointer}
+    .header-actions{display:flex;gap:8px}
+    .header-actions button{display:flex;gap:6px;align-items:center;border:none;border-radius:8px;padding:8px 12px;background:var(--accent-color);color:#222;cursor:pointer;font-weight:600}
+    .header-actions button.secondary{background:transparent;border:1px solid var(--accent-color);color:var(--text-primary)}
+    .header-actions button:hover{filter:brightness(.95)}
+
+    .content{padding:16px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:14px}
+    .stat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+    .stat-value{font-size:1.8rem;font-weight:800}
+    .muted{color:var(--text-secondary)}
+    .section-title{display:flex;gap:8px;align-items:center;color:var(--accent-color);margin-bottom:10px}
+
+    /* CRUD table - polished */
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .btn{display:flex;gap:6px;align-items:center;border:1px solid var(--accent-color);background:transparent;color:var(--text-primary);
+      padding:8px 10px;border-radius:10px;cursor:pointer}
+    .btn.success{border-color:var(--success);color:var(--success)}
+    .btn.success:hover{background:var(--success);color:#fff}
+    .btn.danger{border-color:var(--danger);color:var(--danger)}
+    .btn.danger:hover{background:var(--danger);color:#fff}
+
+    .table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--border)}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{position:sticky;top:0;background:rgba(255,255,255,.06);backdrop-filter:blur(2px)}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+    tbody tr:nth-child(odd){background:rgba(255,255,255,.02)}
+    tbody tr:hover{background:rgba(255,255,255,.04)}
+    td .field{width:100%}
+    input[type="text"],input[type="number"],textarea,select{
+      width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.06);
+      color:var(--text-primary);outline:none}
+    textarea{min-height:88px;resize:vertical}
+    input[type="number"]{text-align:right}
+    .actions{display:flex;gap:6px;flex-wrap:wrap}
+
+    @media (max-width:768px){
+      .main{margin-left:0}
+      .sidebar{transform:translateX(-100%)}
+      .sidebar.open{transform:translateX(0)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">社區管理系統</div>
+      <div class="user-info">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div>
+          <div id="userName">載入中...</div>
+          <div class="muted" id="userRole">住戶</div>
+        </div>
+      </div>
+    </div>
+    <ul class="nav-menu">
+      <li><a class="nav-link active" href="#" data-section="dashboard"><span class="material-icons">dashboard</span> 儀表板</a></li>
+      <li><a class="nav-link" href="#" data-section="announcements"><span class="material-icons">campaign</span> 公告/投票</a></li>
+      <li><a class="nav-link" href="#" data-section="maintenance"><span class="material-icons">build</span> 設備/維護</a></li>
+      <li><a class="nav-link" href="#" data-section="finance"><span class="material-icons">account_balance</span> 管理費/收支</a></li>
+      <li><a class="nav-link" href="#" data-section="residents"><span class="material-icons">people</span> 住戶/人員</a></li>
+      <li><a class="nav-link" href="#" data-section="visitors"><span class="material-icons">how_to_reg</span> 訪客/包裹</a></li>
+      <li><a class="nav-link" href="#" data-section="meetings"><span class="material-icons">event</span> 會議/活動</a></li>
+      <li><a class="nav-link" href="#" data-section="emergencies"><span class="material-icons">emergency</span> 緊急</a></li>
+    </ul>
+  </nav>
+
+  <main class="main">
+    <header>
+      <div class="page-title">
+        <span class="material-icons menu" onclick="toggleSidebar()">menu</span>
+        <span id="pageTitle">儀表板</span>
+      </div>
+      <div class="header-actions">
+        <button class="secondary" onclick="location.href='dashboard.html'"><span class="material-icons">home</span> 返回前台</button>
+        <button onclick="logout()"><span class="material-icons">logout</span> 登出</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <section id="dashboardSection">
+        <div class="stats">
+          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">campaign</span><div class="stat-value" id="announcementCount">0</div></div><div class="muted">本月公告</div></div>
+          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">build</span><div class="stat-value" id="maintenanceCount">0</div></div><div class="muted">待處理維修</div></div>
+          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">people</span><div class="stat-value" id="residentCount">0</div></div><div class="muted">住戶總數</div></div>
+          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">event</span><div class="stat-value" id="eventCount">0</div></div><div class="muted">本月活動</div></div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h2 class="section-title"><span class="material-icons">campaign</span> 最新公告</h2>
+          <div id="recentAnnouncements"><div class="muted">載入中...</div></div>
+        </div>
+      </section>
+
+      <section id="dynamicSection" class="hidden"></section>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://oyydhfvgtmghvnbkvczr.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWRoZnZndG1naHZuYmt2Y3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTMwMTIsImV4cCI6MjA3MzE2OTAxMn0.fgz_Vl7bZ1rtrttOAQcTlymMgHfhiY2NDo3qEnBT1og";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let currentUser=null;
+
+    function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
+
+    document.addEventListener('DOMContentLoaded', init);
+    async function init(){
+      const storedUser = localStorage.getItem('currentUser');
+      if (!storedUser){ location.href='auth.html'; return; }
+      try{
+        currentUser = JSON.parse(storedUser);
+        document.getElementById('userName').textContent = currentUser.name || '未知用戶';
+        document.getElementById('userRole').textContent = ({resident:'住戶', committee:'委員會', vendor:'廠商', admin:'管理員'})[currentUser.role] || '住戶';
+        document.getElementById('userAvatar').textContent = (currentUser.name||'U').charAt(0).toUpperCase();
+      }catch(e){ localStorage.removeItem('currentUser'); location.href='auth.html'; return; }
+
+      await refreshDashboard();
+      await loadRecentAnnouncements();
+
+      document.querySelectorAll('.nav-link').forEach(a=>{
+        a.addEventListener('click', (ev)=>{
+          ev.preventDefault();
+          document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
+          a.classList.add('active');
+          showSection(a.dataset.section);
+        });
+      });
+    }
+
+    async function refreshDashboard(){
+      try{
+        const firstDayISO = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        const { count: announcementCount } = await supabase.from('announcements').select('*', { count:'exact', head:true }).eq('status','published').gte('created_at', firstDayISO);
+        document.getElementById('announcementCount').textContent = announcementCount || 0;
+
+        const { count: maintenanceCount } = await supabase.from('maintenance').select('*',{ count:'exact', head:true }).in('status',['open','progress','pending','in_progress']);
+        document.getElementById('maintenanceCount').textContent = maintenanceCount || 0;
+
+        const { count: residentCount } = await supabase.from('residents').select('*',{ count:'exact', head:true });
+        document.getElementById('residentCount').textContent = residentCount || 0;
+
+        const { count: eventCount } = await supabase.from('meetings').select('*',{ count:'exact', head:true }).gte('time', firstDayISO);
+        document.getElementById('eventCount').textContent = eventCount || 0;
+      }catch(e){ console.error(e); }
+    }
+
+    async function loadRecentAnnouncements(){
+      try{
+        const { data, error } = await supabase.from('announcements')
+          .select('id, title, content, created_at, author, status')
+          .eq('status','published')
+          .order('created_at', { ascending:false })
+          .limit(5);
+        const box = document.getElementById('recentAnnouncements');
+        if (error) throw error;
+        if (!data || !data.length){ box.innerHTML='<div class="muted">暫無公告</div>'; return; }
+        box.innerHTML = data.map(a=>`
+          <div class="card" style="margin-bottom:10px">
+            <div style="font-weight:700;margin-bottom:4px">${a.title||''}</div>
+            <div class="muted" style="margin:4px 0 8px">${(a.content||'').slice(0,150)}${(a.content||'').length>150?'...':''}</div>
+            <div class="muted" style="display:flex;justify-content:space-between">
+              <span>作者：${a.author||'系統'}</span>
+              <span>${new Date(a.created_at).toLocaleString('zh-TW')}</span>
+            </div>
+          </div>
+        `).join('');
+      }catch(e){
+        console.error(e);
+        document.getElementById('recentAnnouncements').innerHTML = '<div class="muted">公告載入失敗</div>';
+      }
+    }
+
+    function showSection(sec){
+      const titleMap = {
+        dashboard:'儀表板', announcements:'公告/投票', maintenance:'維修管理', finance:'帳務/收費',
+        residents:'住戶/人員', visitors:'訪客/包裹', meetings:'會議/活動', emergencies:'緊急（只讀）'
+      };
+      document.getElementById('pageTitle').textContent = titleMap[sec] || '儀表板';
+      const dash = document.getElementById('dashboardSection');
+      const dyn  = document.getElementById('dynamicSection');
+      if (sec === 'dashboard'){ dash.classList.remove('hidden'); dyn.classList.add('hidden'); return; }
+      dash.classList.add('hidden'); dyn.classList.remove('hidden'); renderCRUD(sec);
+    }
+
+    /* CRUD config - with nicer widgets */
+    const CFG = {
+      announcements:{table:'announcements', columns:[
+        {key:'title', label:'標題', width:240},
+        {key:'content', label:'內容', type:'textarea', width:420},
+        {key:'author', label:'作者', width:140},
+        {key:'status', label:'狀態', type:'select', options:['draft','published'], width:180},
+      ], orderBy:{key:'created_at', ascending:false}, newRow:()=>({title:'',content:'',author:'',status:'draft'})},
+
+      maintenance:{table:'maintenance', columns:[
+        {key:'equipment', label:'設備', width:160},
+        {key:'item',      label:'項目', width:200},
+        {key:'status',    label:'狀態', type:'select', options:['open','progress','pending','in_progress','closed'], width:220},
+        {key:'handler',   label:'承辦', width:140},
+        {key:'assignee',  label:'指派', width:140},
+        {key:'cost',      label:'費用', type:'number', width:120},
+      ], orderBy:{key:'created_at', ascending:false}, newRow:()=>({equipment:'',item:'',status:'open',handler:'',assignee:'',cost:0})},
+
+      finance:{table:'fees', columns:[
+        {key:'room',   label:'房號', width:100},
+        {key:'amount', label:'金額', type:'number', width:120},
+        {key:'due',    label:'到期(YYYY-MM-DD)', width:180},
+        {key:'invoice',label:'發票', width:160},
+        {key:'paid',   label:'已繳', type:'select', options:[false,true], width:120},
+      ], orderBy:{key:'due', ascending:true}, newRow:()=>({room:'',amount:0,due:'',invoice:'',paid:false})},
+
+      residents:{table:'residents', columns:[
+        {key:'name',  label:'姓名', width:140},
+        {key:'room',  label:'房號', width:100},
+        {key:'phone', label:'電話', width:160},
+        {key:'email', label:'Email', width:220},
+        {key:'role',  label:'身分', type:'select', options:['resident','committee','vendor','admin'], width:220},
+      ], orderBy:{key:'created_at', ascending:false}, newRow:()=>({name:'',room:'',phone:'',email:'',role:'resident'})},
+
+      visitors:{table:'visitors', columns:[
+        {key:'name', label:'姓名', width:140},
+        {key:'room', label:'房號', width:100},
+        {key:'in',   label:'進場', ro:true, width:150},
+        {key:'out',  label:'離場', ro:true, width:150},
+      ], orderBy:{key:'created_at', ascending:false}, newRow:()=>({name:'',room:''})},
+
+      meetings:{table:'meetings', columns:[
+        {key:'topic',   label:'主題', width:220},
+        {key:'time',    label:'時間(YYYY-MM-DD HH:mm)', width:220},
+        {key:'location',label:'地點', width:200},
+        {key:'notes',   label:'備註', type:'textarea', width:260},
+      ], orderBy:{key:'time', ascending:false}, newRow:()=>({topic:'',time:'',location:'',notes:''})},
+
+      emergencies:{table:'emergencies', columns:[
+        {key:'type', label:'類型', ro:true, width:160},
+        {key:'time', label:'時間', ro:true, width:160},
+        {key:'by',   label:'使用者', ro:true, width:180},
+        {key:'note', label:'紀錄', ro:true, width:300},
+      ], orderBy:{key:'time', ascending:false}, newRow:null, readonly:true}
+    };
+
+    function editor(col, value, ro){
+      const v = value ?? '';
+      if (col.ro || ro) return `<div class="muted">${(v+'')}</div>`;
+      if (col.type === 'textarea') return `<textarea class="field" data-key="${col.key}">${v}</textarea>`;
+      if (col.type === 'number')   return `<input class="field" data-key="${col.key}" type="number" step="any" value="${v}">`;
+      if (col.type === 'select')   return `<select class="field" data-key="${col.key}">${(col.options||[]).map(opt=>{
+        const ov = (typeof opt==='boolean')? String(opt): opt;
+        const sel = (String(v)===String(ov))?'selected':'';
+        return `<option value="${ov}" ${sel}>${ov}</option>`;
+      }).join('')}</select>`;
+      return `<input class="field" data-key="${col.key}" type="text" value="${v}">`;
+    }
+
+    async function renderCRUD(key){
+      const cfg = CFG[key];
+      const host = document.getElementById('dynamicSection');
+      if (!cfg){ host.innerHTML = '<div class="muted">未支援的模組</div>'; return; }
+
+      host.innerHTML = `
+        <div class="card">
+          <div class="toolbar">
+            ${cfg.readonly ? '' : `<button class="btn success" id="btnAdd"><span class="material-icons">add</span> 新增一筆</button>`}
+            <button class="btn" id="btnReload"><span class="material-icons">sync</span> 重新整理</button>
+            <span class="muted">當前模組：${key}</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  ${cfg.columns.map(c=>`<th style="min-width:${c.width||140}px">${c.label}</th>`).join('')}
+                  <th style="min-width:200px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="crudBody"><tr><td colspan="${cfg.columns.length+1}" class="muted">載入中...</td></tr></tbody>
+            </table>
+          </div>
+        </div>`;
+
+      document.getElementById('btnReload').onclick = ()=> loadRows(cfg);
+      const addBtn = document.getElementById('btnAdd'); if (addBtn) addBtn.onclick = ()=> addNewRow(cfg);
+      await loadRows(cfg);
+    }
+
+    async function loadRows(cfg){
+      const body = document.getElementById('crudBody');
+      try{
+        let q = supabase.from(cfg.table).select('*');
+        if (cfg.orderBy) q = q.order(cfg.orderBy.key, { ascending: cfg.orderBy.ascending });
+        const { data, error } = await q.limit(1000);
+        if (error) throw error;
+        if (!data || !data.length){ body.innerHTML = `<tr><td colspan="${cfg.columns.length+1}" class="muted">目前無資料</td></tr>`; return; }
+        body.innerHTML = data.map(row=>{
+          const cells = cfg.columns.map(col=>`<td data-col="${col.key}">${editor(col, row[col.key], col.ro)}</td>`).join('');
+          return `<tr data-id="${row.id||''}">${cells}
+            <td class="actions">
+              ${cfg.readonly ? '' : `
+                <button class="btn success" data-act="save"><span class="material-icons">save</span> 儲存</button>
+                <button class="btn danger" data-act="remove"><span class="material-icons">delete</span> 刪除</button>`}
+              ${cfg.table==='visitors' && !cfg.readonly ? `<button class="btn" data-act="checkout"><span class="material-icons">logout</span> 簽出</button>` : ''}
+            </td></tr>`;
+        }).join('');
+        body.querySelectorAll('[data-act]').forEach(btn=>{
+          const tr=btn.closest('tr'); const id=tr.getAttribute('data-id')||null; const act=btn.getAttribute('data-act');
+          btn.onclick=()=> rowAction(cfg, act, tr, id);
+        });
+      }catch(e){ console.error(e); body.innerHTML = `<tr><td colspan="${cfg.columns.length+1}" class="muted">載入失敗</td></tr>`; }
+    }
+
+    function addNewRow(cfg){
+      if (!cfg.newRow) return;
+      const body = document.getElementById('crudBody');
+      const row = cfg.newRow();
+      const cells = cfg.columns.map(col=>`<td data-col="${col.key}">${editor(col, row[col.key], col.ro)}</td>`).join('');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `${cells}
+        <td class="actions">
+          <button class="btn success" data-act="save"><span class="material-icons">save</span> 建立</button>
+          <button class="btn" data-act="cancel"><span class="material-icons">close</span> 取消</button>
+        </td>`;
+      body.prepend(tr);
+      tr.querySelectorAll('[data-act]').forEach(btn=>{
+        const act = btn.getAttribute('data-act');
+        btn.onclick = ()=> rowAction(cfg, act, tr, null);
+      });
+    }
+
+    function collectRow(cfg, tr){
+      const obj = {};
+      cfg.columns.forEach(col=>{
+        const el = tr.querySelector(`[data-col="${col.key}"] [data-key="${col.key}"]`);
+        if (!el) return;
+        let v = el.value;
+        if (col.type==='number') v = Number(v||0);
+        if (col.type==='select' && (col.options||[]).includes(true)) { // handle boolean select string -> boolean
+          if (v==='true') v = true; if (v==='false') v = false;
+        }
+        obj[col.key] = v;
+      });
+      return obj;
+    }
+
+    async function rowAction(cfg, act, tr, id){
+      try{
+        if (act==='cancel'){ tr.remove(); return; }
+        if (act==='remove'){
+          if (!id){ tr.remove(); return; }
+          if (!confirm('確定要刪除此筆資料？')) return;
+          const { error } = await supabase.from(cfg.table).delete().eq('id', id);
+          if (error) throw error; tr.remove(); return;
+        }
+        if (act==='checkout' && cfg.table==='visitors'){
+          const { error } = await supabase.from('visitors').update({ out:new Date().toISOString() }).eq('id', id);
+          if (error) throw error; await loadRows(cfg); return;
+        }
+        if (act==='save'){
+          const payload = collectRow(cfg, tr);
+          if (id){
+            const { error } = await supabase.from(cfg.table).update(payload).eq('id', id);
+            if (error) throw error;
+          }else{
+            const { data, error } = await supabase.from(cfg.table).insert(payload).select('id').single();
+            if (error) throw error;
+            if (data?.id) tr.setAttribute('data-id', data.id);
+          }
+          await refreshDashboard();
+          return;
+        }
+      }catch(e){ console.error(e); alert('操作失敗，請稍後再試'); }
+    }
+
+    function logout(){ localStorage.removeItem('currentUser'); location.href='index.html'; }
+  </script>
+</body>
+</html>
