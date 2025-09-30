@@ -76,7 +76,42 @@
       .sidebar{transform:translateX(-100%)}
       .sidebar.open{transform:translateX(0)}
     }
-  </style>
+  
+    /* When sidebar is collapsed, the main content fills the space */
+    .main {
+        transition: all 0.3s ease;
+        margin-left: 280px; /* Sidebar width when expanded */
+        width: calc(100% - 280px); /* Calculate the remaining width when sidebar is expanded */
+    }
+
+    .main.expanded {
+        margin-left: 0; /* No margin when sidebar is collapsed */
+        width: 100%; /* Fill 100% of the space when sidebar is collapsed */
+    }
+
+    /* When sidebar is collapsed, make sure it fills the space */
+    .sidebar.collapsed + .main {
+        margin-left: 0; /* Remove the margin when collapsed, so it takes full space */
+        width: 100%; /* Main content takes the full width */
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .main {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+    }
+    
+</style>
 </head>
 <body>
   <nav class="sidebar" id="sidebar">
@@ -408,6 +443,33 @@
     }
 
     function logout(){ localStorage.removeItem('currentUser'); location.href='index.html'; }
-  </script>
+  
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('mainContent');
+
+    if (!sidebar || !main) return;
+
+    });
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('mainContent');
+
+    if (!sidebar || !main) return;
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth <= 768) {
+            sidebar.classList.add('collapsed');
+            main.classList.add('expanded');
+        } else {
+            sidebar.classList.remove('collapsed');
+            main.classList.remove('expanded');
+        }
+    });
+});
+
+</script>
 </body>
 </html>
