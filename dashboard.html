@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>儀表板 - 社區管理系統</title>
+  <title>首頁 - 社區管理系統</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -125,6 +125,21 @@
         }
     }
     
+
+    .emergency-action {
+      background: rgba(45,45,45,.85);
+      border: 2px solid #f44336;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: bold;
+      color: #f44336;
+    }
+    .emergency-action:hover {
+      background: rgba(244,67,54,0.2);
+    }
+    
 </style>
 </head>
 <body>
@@ -140,7 +155,7 @@
       </div>
     </div>
     <ul class="nav-menu" id="navMenu">
-      <li><a href="#" class="nav-link active" data-section="dashboard"><span class="material-icons">dashboard</span> 儀表板</a></li>
+      <li><a href="#" class="nav-link active" data-section="dashboard"><span class="material-icons">dashboard</span> 首頁</a></li>
       <li><a href="#" class="nav-link" data-section="announcements"><span class="material-icons">campaign</span> 公告/投票</a></li>
       <li><a href="#" class="nav-link" data-section="maintenance"><span class="material-icons">build</span> 設備/維護</a></li>
       <li><a href="#" class="nav-link" data-section="finance"><span class="material-icons">account_balance</span> 管理費/收支</a></li>
@@ -155,7 +170,7 @@
     <header>
       <div class="page-title">
         <span class="material-icons menu" onclick="toggleSidebar()">menu</span>
-        <span id="pageTitle">儀表板</span>
+        <span id="pageTitle">首頁</span>
       </div>
       <div class="header-actions">
         <button onclick="window.location.href='admin.html'"><span class="material-icons">admin_panel_settings</span> 進入後台</button>
@@ -177,14 +192,36 @@
           <div class="announcement-list" id="recentAnnouncements"><div class="muted">載入中...</div></div>
         </div>
 
-        <div class="card" style="margin-top:12px">
-          <h2 class="section-title"><span class="material-icons">flash_on</span> 快速操作</h2>
-          <div class="quick">
-            <div class="action" data-section="maintenance"><div class="material-icons">build</div><h3>報修設備</h3></div>
-            <div class="action" data-section="visitors"><div class="material-icons">how_to_reg</div><h3>訪客登記</h3></div>
-            <div class="action" data-section="finance"><div class="material-icons">account_balance</div><h3>查看帳單</h3></div>
-            <div class="action" data-section="meetings"><div class="material-icons">event</div><h3>會議記錄</h3></div>
-          </div>
+        
+<div class="card" style="margin-top:12px">
+  <h2 class="section-title"><span class="material-icons" style="color:#f44336;">emergency</span> 
+    <span style="color:#f44336;font-weight:bold">緊急事件</span>
+  </h2>
+  <div class="quick">
+    <div class="emergency-action" onclick="confirmEmergency('救護車119','醫療緊急狀況')">
+      <div class="material-icons" style="color:#f44336;">local_hospital</div>
+      <h3 style="color:#f44336;font-weight:bold">救護車 119</h3>
+    </div>
+
+    <div class="emergency-action" onclick="confirmEmergency('報警110','治安緊急狀況')">
+      <div class="material-icons" style="color:#f44336;">report_problem</div>
+      <h3 style="color:#f44336;font-weight:bold">報警 110</h3>
+    </div>
+
+    <div class="emergency-action" onclick="confirmEmergency('AED','需要AED急救設備')">
+      <div class="material-icons" style="color:#f44336;">favorite</div>
+      <h3 style="color:#f44336;font-weight:bold">AED</h3>
+    </div>
+
+    <div class="emergency-action" onclick="confirmEmergency('可疑人員','陌生人員闖入警告')">
+      <div class="material-icons" style="color:#f44336;">warning</div>
+      <h3 style="color:#f44336;font-weight:bold">陌生人員闖入</h3>
+    </div>
+  </div>
+
+
+</div>
+
         </div>
       </section>
 
@@ -231,8 +268,8 @@
       const active = document.querySelector(`.nav-link[data-section="${section}"]`);
       if (active) active.classList.add('active');
 
-      const titles={dashboard:'儀表板',announcements:'公告/投票',maintenance:'設備/維護',finance:'管理費/收支',residents:'住戶/人員',visitors:'訪客/包裹',meetings:'會議/活動',emergencies:'緊急'};
-      document.getElementById('pageTitle').textContent = titles[section] || '儀表板';
+      const titles={dashboard:'首頁',announcements:'公告/投票',maintenance:'設備/維護',finance:'管理費/收支',residents:'住戶/人員',visitors:'訪客/包裹',meetings:'會議/活動',emergencies:'緊急'};
+      document.getElementById('pageTitle').textContent = titles[section] || '首頁';
 
       const dash = document.getElementById('dashboardSection');
       const dyn  = document.getElementById('dynamicContent');
@@ -374,7 +411,80 @@
       }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">緊急資料載入失敗</div>'; }
     }
 
-    function logout(){ localStorage.removeItem('currentUser'); window.location.href='index.html'; }
+    
+function confirmEmergency(type, note){
+  if (confirm(`確定要送出「${type}」事件嗎？`)) {
+    triggerEmergency(type, note);
+  }
+}
+
+async function triggerEmergency(type, note){
+  if (!currentUser){ alert("尚未登入"); return; }
+  try{
+    const payload = {
+      type: type,
+      note: note,
+      time: new Date().toISOString(),
+      ["by"]: currentUser.name || '未知'
+    };
+
+    const { data, error } = await supabase.from('emergencies').insert([payload]).select();
+    if (error) {
+      console.error("Supabase insert error:", error);
+      alert("送出失敗：" + error.message);
+      return;
+    }
+
+    if (data && data.length > 0){
+      const x = data[0];
+      const el = document.getElementById('emergencyList');
+      const item = `
+        <div class="announcement-item" style="border-left:4px solid #f44336;">
+          <div class="announcement-title" style="color:#f44336;font-weight:bold">${x.type}</div>
+          <div class="muted">${x.note||''}</div>
+          <div class="announcement-meta">
+            <span>使用者:${x.by||'-'}</span>
+            <span>${new Date(x.time).toLocaleString('zh-TW')}</span>
+          </div>
+        </div>
+      `;
+      if (el) el.innerHTML = item + el.innerHTML;
+    }
+  }catch(e){
+    console.error("triggerEmergency exception:", e);
+    alert("送出失敗：" + e.message);
+  }
+}
+
+async function loadEmergenciesList(){
+  const el=document.getElementById('emergencyList');
+  if (!el) return;
+  try{
+    const { data, error } = await supabase
+      .from('emergencies')
+      .select('type,time,by,note')
+      .order('time',{ascending:false})
+      .limit(10);
+    if (error) { console.error(error); el.innerHTML='<div class="muted">緊急資料載入失敗</div>'; return; }
+    el.innerHTML = (data||[]).map(x=>`
+      <div class="announcement-item" style="border-left:4px solid #f44336;">
+        <div class="announcement-title" style="color:#f44336;font-weight:bold">${x.type}</div>
+        <div class="muted">${x.note||''}</div>
+        <div class="announcement-meta">
+          <span>使用者:${x.by||'-'}</span>
+          <span>${new Date(x.time).toLocaleString('zh-TW')}</span>
+        </div>
+      </div>
+    `).join('') || '<div class="muted">暫無緊急紀錄</div>';
+  }catch(e){
+    console.error(e);
+    el.innerHTML='<div class="muted">緊急資料載入失敗</div>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{ loadEmergenciesList(); });
+
+function logout(){ localStorage.removeItem('currentUser'); window.location.href='index.html'; }
 
     
   
