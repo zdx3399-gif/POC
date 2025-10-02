@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -11,11 +10,51 @@
 
   <style>
     :root{--primary-color:#1a1a1a;--secondary-color:#2d2d2d;--accent-color:#ffd700;--text-primary:#fff;--text-secondary:#b0b0b0}
-    *{box-sizing:border-box} html,body{margin:0}
-    body{font-family:'Roboto',sans-serif;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));color:var(--text-primary)}
+    *{box-sizing:border-box}
+    
+    html,body{
+      margin:0;
+      height:100vh;
+      overflow:hidden;
+    }
+    
+    body{
+      font-family:'Roboto',sans-serif;
+      background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+      color:var(--text-primary);
+      display:flex;
+    }
+    
     .hidden{display:none!important}
 
-    .sidebar{width:280px;background:rgba(45,45,45,.95);backdrop-filter:blur(8px);border-right:2px solid var(--accent-color);position:fixed;inset:0 auto 0 0;overflow:auto;padding:2rem 0;transition:.3s}
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 99;
+      backdrop-filter: blur(4px);
+    }
+    
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    .sidebar{
+      width:280px;
+      background:rgba(45,45,45,.95);
+      backdrop-filter:blur(8px);
+      border-right:2px solid var(--accent-color);
+      position:fixed;
+      top:0;
+      left:0;
+      height:100vh;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:2rem 0;
+      transition:.3s;
+      z-index:100;
+    }
     .sidebar.collapsed{transform:translateX(-100%)}
     .sidebar.open{transform:translateX(0)}
     .sidebar-header{padding:0 2rem 1.5rem;border-bottom:1px solid rgba(255,215,0,.3);margin-bottom:1.5rem}
@@ -26,14 +65,38 @@
     .nav-link{display:flex;gap:12px;align-items:center;padding:12px 20px;color:var(--text-primary);text-decoration:none;border-left:3px solid transparent;transition:.2s}
     .nav-link:hover,.nav-link.active{background:rgba(255,215,0,.1);border-left-color:var(--accent-color);color:var(--accent-color)}
 
-    .main{margin-left:280px;min-height:100vh}
-    header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--primary-color);border-bottom:1px solid rgba(255,215,0,.2)}
+    .main{
+      margin-left:280px;
+      width:calc(100% - 280px);
+      height:100vh;
+      display:flex;
+      flex-direction:column;
+      transition:all 0.3s ease;
+    }
+    .main.expanded{
+      margin-left:0;
+      width:100%;
+    }
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:10px 14px;
+      background:var(--primary-color);
+      border-bottom:1px solid rgba(255,215,0,.2);
+      flex-shrink:0;
+    }
     .page-title{display:flex;gap:8px;align-items:center;color:var(--accent-color);font-weight:700}
     .menu{cursor:pointer}
     .header-actions{display:flex;gap:8px}
     .header-actions button{display:flex;gap:6px;align-items:center;border:none;border-radius:8px;padding:8px 12px;background:var(--accent-color);color:#222;cursor:pointer;font-weight:600}
     .header-actions button:hover{filter:brightness(.95)}
-    .content{padding:16px}
+    .content{
+      flex:1;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:16px;
+    }
 
     .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
     .card{background:rgba(45,45,45,.85);border:1px solid rgba(255,215,0,.25);border-radius:14px;padding:14px}
@@ -50,81 +113,278 @@
     .quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
     .action{background:rgba(45,45,45,.85);border:1px solid rgba(255,215,0,.25);border-radius:12px;padding:16px;text-align:center;cursor:pointer}
 
+    /* Carousel styles for announcement rotation */
+    .carousel-container{
+      position:relative;
+      width:100%;
+      height:300px;
+      overflow:hidden;
+      border-radius:14px;
+      margin-bottom:20px;
+    }
+    .carousel-slide{position:absolute;width:100%;height:100%;opacity:0;transition:opacity 0.8s ease-in-out;background-size:cover;background-position:center;display:flex;align-items:flex-end;padding:30px}
+    .carousel-slide.active{opacity:1}
+    .carousel-content{background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);padding:20px;border-radius:12px;width:100%}
+    .carousel-title{font-size:1.8rem;font-weight:700;color:var(--accent-color);margin-bottom:10px}
+    .carousel-text{color:var(--text-primary);margin-bottom:10px;line-height:1.6}
+    /* Removed carousel navigation buttons */
+    .carousel-indicators{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10}
+    .carousel-indicator{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.5);cursor:pointer;transition:0.3s}
+    .carousel-indicator.active{background:var(--accent-color);width:30px;border-radius:6px}
+
+    /* Voting card styles */
+    .vote-card{background:rgba(45,45,45,.85);border:1px solid rgba(255,215,0,.25);border-radius:14px;padding:16px;margin-bottom:12px}
+    .vote-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .vote-title{font-size:1.2rem;font-weight:700;color:var(--accent-color)}
+    .vote-status{padding:4px 12px;border-radius:20px;font-size:0.85rem;font-weight:600}
+    .vote-status.open{background:rgba(76,175,80,0.2);color:#4caf50;border:1px solid #4caf50}
+    .vote-status.closed{background:rgba(158,158,158,0.2);color:#9e9e9e;border:1px solid #9e9e9e}
+    .vote-options{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+    .vote-option{display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.05);border-radius:10px;cursor:pointer;transition:0.3s;border:2px solid transparent}
+    .vote-option:hover{background:rgba(255,215,0,0.1);border-color:var(--accent-color)}
+    .vote-option.selected{background:rgba(255,215,0,0.15);border-color:var(--accent-color)}
+    .vote-option input[type="radio"]{width:20px;height:20px;cursor:pointer}
+    .vote-option-label{flex:1;font-weight:500}
+    .vote-count{color:var(--text-secondary);font-size:0.9rem}
+    .vote-btn{width:100%;padding:12px;background:var(--accent-color);color:#222;border:none;border-radius:10px;font-weight:700;cursor:pointer;margin-top:12px;transition:0.3s}
+    .vote-btn:hover{filter:brightness(0.9)}
+    .vote-btn:disabled{opacity:0.5;cursor:not-allowed}
+    .vote-result-bar{height:8px;background:rgba(255,215,0,0.3);border-radius:4px;margin-top:6px;overflow:hidden}
+    .vote-result-fill{height:100%;background:var(--accent-color);transition:width 0.5s ease}
+
+    /* Maintenance form styles */
+    .form-group{margin-bottom:16px}
+    .form-label{display:block;margin-bottom:6px;font-weight:600;color:var(--accent-color)}
+    .form-input,.form-textarea,.form-select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,215,0,.25);background:rgba(255,255,255,.06);color:var(--text-primary);outline:none;font-family:inherit}
+    .form-textarea{min-height:100px;resize:vertical}
+    .form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--accent-color);background:rgba(255,255,255,.08)}
+    .file-upload{display:flex;align-items:center;gap:12px}
+    .file-upload input[type="file"]{display:none}
+    .file-upload-btn{padding:10px 16px;background:rgba(255,215,0,0.2);border:1px solid var(--accent-color);border-radius:10px;cursor:pointer;transition:0.3s;display:flex;align-items:center;gap:6px}
+    .file-upload-btn:hover{background:rgba(255,215,0,0.3)}
+    .file-preview{max-width:200px;max-height:200px;border-radius:10px;margin-top:10px}
+    .submit-btn{width:100%;padding:14px;background:var(--accent-color);color:#222;border:none;border-radius:10px;font-weight:700;font-size:1.1rem;cursor:pointer;transition:0.3s}
+    .submit-btn:hover{filter:brightness(.9)}
+
+    /* Profile editor styles */
+    .profile-card{background:rgba(45,45,45,.85);border:1px solid rgba(255,215,0,.25);border-radius:14px;padding:20px;max-width:600px;margin:0 auto}
+    .profile-avatar-large{width:100px;height:100px;border-radius:50%;background:var(--accent-color);color:#222;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:2.5rem;margin:0 auto 20px}
+    .profile-field{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:center;margin-bottom:16px}
+    .profile-field-label{font-weight:600;color:var(--accent-color)}
+    .profile-field-value{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,215,0,.25);background:rgba(255,255,255,.06);color:var(--text-primary)}
+    .profile-actions{display:flex;gap:12px;margin-top:20px}
+    .profile-btn{flex:1;padding:12px;border:none;border-radius:10px;font-weight:700;cursor:pointer;transition:0.3s}
+    .profile-btn.primary{background:var(--accent-color);color:#222}
+    .profile-btn.secondary{background:transparent;border:1px solid var(--accent-color);color:var(--text-primary)}
+    .profile-btn:hover{filter:brightness(.9)}
+
+    /* Package tracking styles */
+    .package-list{display:flex;flex-direction:column;gap:12px}
+    .package-item{background:rgba(255,255,255,.06);border-left:4px solid var(--accent-color);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center}
+    .package-info{flex:1}
+    .package-status{padding:6px 14px;border-radius:20px;font-size:0.85rem;font-weight:600}
+    .package-status.pending{background:rgba(255,193,7,0.2);color:#ffc107;border:1px solid #ffc107}
+    .package-status.picked-up{background:rgba(76,175,80,0.2);color:#4caf50;border:1px solid #4caf50}
+
+    /* AI Customer Service styles */
+    .ai-chat-button{position:fixed;bottom:30px;right:30px;width:70px;height:70px;border-radius:16px;background:#FFD93D;border:3px solid #222;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:0.3s;z-index:1000}
+    .ai-chat-button:hover{transform:scale(1.1);box-shadow:0 6px 30px rgba(255,217,61,0.6)}
+    /* Updated AI icon to be inline SVG robot */
+    .ai-chat-button svg{width:40px;height:40px}
+    .ai-chat-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:1001;backdrop-filter:blur(4px)}
+    .ai-chat-modal.active{display:flex}
+    .ai-chat-container{background:var(--secondary-color);border:2px solid var(--accent-color);border-radius:20px;width:90%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,0.5)}
+    .ai-chat-header{display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:2px solid rgba(255,215,0,0.3)}
+    .ai-chat-title{font-size:1.3rem;font-weight:700;color:var(--accent-color);display:flex;align-items:center;gap:10px}
+    .ai-chat-close{width:36px;height:36px;border-radius:50%;background:transparent;border:2px solid var(--accent-color);color:var(--text-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.3s}
+    .ai-chat-close:hover{background:var(--accent-color);color:#222}
+    .ai-chat-tabs{display:flex;gap:0;border-bottom:2px solid rgba(255,215,0,0.2);background:rgba(0,0,0,0.2)}
+    .ai-chat-tab{flex:1;padding:14px;text-align:center;cursor:pointer;border-bottom:3px solid transparent;transition:0.3s;font-weight:600;color:var(--text-secondary)}
+    .ai-chat-tab.active{color:var(--accent-color);border-bottom-color:var(--accent-color);background:rgba(255,215,0,0.05)}
+    .ai-chat-tab:hover{background:rgba(255,215,0,0.08)}
+    .ai-chat-content{flex:1;overflow-y:auto;padding:20px}
+    .ai-function-list{display:flex;flex-direction:column;gap:12px}
+    .ai-function-item{padding:14px;background:rgba(255,255,255,0.05);border-left:4px solid var(--accent-color);border-radius:10px;cursor:pointer;transition:0.3s}
+    .ai-function-item:hover{background:rgba(255,215,0,0.1);transform:translateX(4px)}
+    .ai-chat-messages{display:flex;flex-direction:column;gap:12px;min-height:300px}
+    .ai-message{padding:12px 16px;border-radius:12px;max-width:80%;word-wrap:break-word}
+    .ai-message.user{background:var(--accent-color);color:#222;align-self:flex-end;margin-left:auto}
+    .ai-message.bot{background:rgba(255,255,255,0.08);color:var(--text-primary);align-self:flex-start}
+    .ai-chat-input-area{display:flex;gap:10px;padding:16px;border-top:2px solid rgba(255,215,0,0.2);background:rgba(0,0,0,0.2)}
+    .ai-chat-input{flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,215,0,0.3);background:rgba(255,255,255,0.06);color:var(--text-primary);outline:none}
+    .ai-chat-input:focus{border-color:var(--accent-color);background:rgba(255,255,255,0.08)}
+    .ai-chat-send{padding:12px 20px;background:var(--accent-color);color:#222;border:none;border-radius:12px;font-weight:700;cursor:pointer;transition:0.3s}
+    .ai-chat-send:hover{filter:brightness(.9)}
+
+    /* Enhanced responsive design for mobile and tablet */
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 260px;
+      }
+      
+      .main {
+        margin-left: 260px;
+        width: calc(100% - 260px);
+      }
+      
+      .carousel-container {
+        height: 280px;
+      }
+      
+      .stats {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+    }
+
     @media (max-width:768px){
-      .main{margin-left:0}
-      .sidebar{transform:translateX(-100%)}
-      .sidebar.open{transform:translateX(0)}
-      header{position:sticky;top:0;z-index:20}
+      .main{margin-left:0;width:100%}
+      .sidebar{
+        transform:translateX(-100%);
+        width:75vw;
+        max-width:320px;
+      }
+      .sidebar.open{
+        transform:translateX(0);
+        box-shadow:4px 0 20px rgba(0,0,0,0.5);
+      }
+      
+      header {
+        position:sticky;
+        top:0;
+        z-index:20;
+        padding:12px 10px;
+      }
+      
+      .page-title {
+        font-size: 1.1rem;
+      }
+      
+      .header-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      
+      .header-actions button {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+      }
+      
+      .header-actions button .material-icons {
+        font-size: 18px;
+      }
+      
+      .content {
+        padding: 12px;
+      }
+      
+      .carousel-container{
+        height:250px;
+        border-radius:10px;
+      }
+      .carousel-content {
+        padding: 15px;
+      }
+      
+      .carousel-title {
+        font-size: 1.3rem;
+      }
+      
+      .carousel-text {
+        font-size: 0.9rem;
+      }
+      
+      .stats {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      
+      .card {
+        padding: 12px;
+      }
+      
+      .section-title {
+        font-size: 1.2rem;
+      }
+      
+      .profile-field{grid-template-columns:1fr;gap:6px}
+      .profile-avatar-large {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+      }
+      
+      .ai-chat-container{width:95%;max-height:90vh}
+      .ai-chat-button{bottom:20px;right:20px;width:60px;height:60px}
+      .ai-chat-button svg {
+        width: 32px;
+        height: 32px;
+      }
+      
+      .quick {
+        grid-template-columns: 1fr;
+      }
+      
+      .emergency-action {
+        padding: 14px;
+      }
+      
+      .vote-card {
+        padding: 14px;
+      }
+      
+      .form-group {
+        margin-bottom: 14px;
+      }
+      
+      .announcement-item {
+        padding: 10px;
+      }
     }
-  
-    /* Ensure main content takes the full width when sidebar is collapsed (280px space) */
-    .main {
-        transition: all 0.3s ease;
-        margin-left: 280px;
-        width: calc(100% - 280px);
+
+    @media (max-width: 480px) {
+      .sidebar {
+        width: 85vw;
+        max-width: none;
+      }
+      
+      .header-actions button span:not(.material-icons) {
+        display: none;
+      }
+      
+      .carousel-container {
+        height: 220px;
+      }
+      
+      .carousel-title {
+        font-size: 1.1rem;
+      }
+      
+      .carousel-text {
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+      
+      .ai-chat-button {
+        width: 55px;
+        height: 55px;
+        bottom: 15px;
+        right: 15px;
+      }
+      
+      .ai-chat-button svg {
+        width: 28px;
+        height: 28px;
+      }
+      
+      .ai-chat-title {
+        font-size: 1.1rem;
+      }
+      
+      .ai-chat-tab {
+        padding: 10px;
+        font-size: 0.85rem;
+      }
     }
-
-    .main.expanded {
-        margin-left: 0;
-        width: 100%;
-    }
-
-    /* Sidebar collapsed + main fills the sidebar space (280px width) */
-    .sidebar.collapsed + .main {
-        width: 100%;
-    }
-
-    /* Mobile responsive */
-    @media (max-width: 768px) {
-        .main {
-            margin-left: 0;
-            width: 100%;
-        }
-
-        .sidebar {
-            transform: translateX(-100%);
-        }
-
-        .sidebar.open {
-            transform: translateX(0);
-        }
-    }
-    
-
-    /* When sidebar is collapsed, the main content fills the space */
-    .main {
-        transition: all 0.3s ease;
-        margin-left: 280px; /* Sidebar width when expanded */
-        width: calc(100% - 280px); /* Calculate the remaining width when sidebar is expanded */
-    }
-
-    .main.expanded {
-        margin-left: 0; /* No margin when sidebar is collapsed */
-        width: 100%; /* Fill 100% of the space when sidebar is collapsed */
-    }
-
-    /* When sidebar is collapsed, make sure it fills the space */
-    .sidebar.collapsed + .main {
-        margin-left: 0; /* Remove the margin when collapsed, so it takes full space */
-        width: 100%; /* Main content takes the full width */
-    }
-
-    /* Mobile responsive */
-    @media (max-width: 768px) {
-        .main {
-            margin-left: 0;
-            width: 100%;
-        }
-
-        .sidebar {
-            transform: translateX(-100%);
-        }
-
-        .sidebar.open {
-            transform: translateX(0);
-        }
-    }
-    
 
     .emergency-action {
       background: rgba(45,45,45,.85);
@@ -139,10 +399,11 @@
     .emergency-action:hover {
       background: rgba(244,67,54,0.2);
     }
-    
-</style>
+  </style>
 </head>
 <body>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">社區管理系統</div>
@@ -156,13 +417,14 @@
     </div>
     <ul class="nav-menu" id="navMenu">
       <li><a href="#" class="nav-link active" data-section="dashboard"><span class="material-icons">dashboard</span> 首頁</a></li>
-      <li><a href="#" class="nav-link" data-section="announcements"><span class="material-icons">campaign</span> 公告/投票</a></li>
+      <li><a href="#" class="nav-link" data-section="profile"><span class="material-icons">person</span> 個人資料</a></li>
+      <li><a href="#" class="nav-link" data-section="packages"><span class="material-icons">inventory_2</span> 我的包裹</a></li>
+      <li><a href="#" class="nav-link" data-section="voting"><span class="material-icons">how_to_vote</span> 社區投票</a></li>
       <li><a href="#" class="nav-link" data-section="maintenance"><span class="material-icons">build</span> 設備/維護</a></li>
       <li><a href="#" class="nav-link" data-section="finance"><span class="material-icons">account_balance</span> 管理費/收支</a></li>
-      <li><a href="#" class="nav-link" data-section="residents"><span class="material-icons">people</span> 住戶/人員</a></li>
-      <li><a href="#" class="nav-link" data-section="visitors"><span class="material-icons">how_to_reg</span> 訪客/包裹</a></li>
+      <li><a href="#" class="nav-link" data-section="visitors"><span class="material-icons">how_to_reg</span> 訪客紀錄</a></li>
       <li><a href="#" class="nav-link" data-section="meetings"><span class="material-icons">event</span> 會議/活動</a></li>
-      <li><a href="#" class="nav-link" data-section="emergencies"><span class="material-icons">emergency</span> 緊急</a></li>
+      <li><a href="#" class="nav-link" data-section="emergencies"><span class="material-icons">emergency</span> 緊急事件</a></li>
     </ul>
   </nav>
 
@@ -180,54 +442,108 @@
 
     <div class="content">
       <section id="dashboardSection">
-        <div class="stats">
-          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">campaign</span><div class="stat-value" id="announcementCount">0</div></div><div class="muted">本月公告</div></div>
-          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">build</span><div class="stat-value" id="maintenanceCount">0</div></div><div class="muted">待處理維修</div></div>
-          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">people</span><div class="stat-value" id="residentCount">0</div></div><div class="muted">住戶總數</div></div>
-          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">event</span><div class="stat-value" id="eventCount">0</div></div><div class="muted">本月活動</div></div>
+        <!-- Carousel for announcements -->
+        <div class="carousel-container" id="announcementCarousel">
+          <div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">載入中...</div>
         </div>
 
         <div class="card" style="margin-top:12px">
-          <h2 class="section-title"><span class="material-icons">campaign</span> 最新公告</h2>
-          <div class="announcement-list" id="recentAnnouncements"><div class="muted">載入中...</div></div>
-        </div>
-
-        
-<div class="card" style="margin-top:12px">
-  <h2 class="section-title"><span class="material-icons" style="color:#f44336;">emergency</span> 
-    <span style="color:#f44336;font-weight:bold">緊急事件</span>
-  </h2>
-  <div class="quick">
-    <div class="emergency-action" onclick="confirmEmergency('救護車119','醫療緊急狀況')">
-      <div class="material-icons" style="color:#f44336;">local_hospital</div>
-      <h3 style="color:#f44336;font-weight:bold">救護車 119</h3>
-    </div>
-
-    <div class="emergency-action" onclick="confirmEmergency('報警110','治安緊急狀況')">
-      <div class="material-icons" style="color:#f44336;">report_problem</div>
-      <h3 style="color:#f44336;font-weight:bold">報警 110</h3>
-    </div>
-
-    <div class="emergency-action" onclick="confirmEmergency('AED','需要AED急救設備')">
-      <div class="material-icons" style="color:#f44336;">favorite</div>
-      <h3 style="color:#f44336;font-weight:bold">AED</h3>
-    </div>
-
-    <div class="emergency-action" onclick="confirmEmergency('可疑人員','陌生人員闖入警告')">
-      <div class="material-icons" style="color:#f44336;">warning</div>
-      <h3 style="color:#f44336;font-weight:bold">陌生人員闖入</h3>
-    </div>
-  </div>
-
-
-</div>
-
+          <h2 class="section-title"><span class="material-icons">emergency</span> 
+            <span style="color:#f44336;font-weight:bold">緊急事件</span>
+          </h2>
+          <div class="quick">
+            <div class="emergency-action" onclick="confirmEmergency('救護車119','醫療緊急狀況')">
+              <div class="material-icons" style="color:#f44336;">local_hospital</div>
+              <h3 style="color:#f44336;font-weight:bold">救護車 119</h3>
+            </div>
+            <div class="emergency-action" onclick="confirmEmergency('報警110','治安緊急狀況')">
+              <div class="material-icons" style="color:#f44336;">report_problem</div>
+              <h3 style="color:#f44336;font-weight:bold">報警 110</h3>
+            </div>
+            <div class="emergency-action" onclick="confirmEmergency('AED','需要AED急救設備')">
+              <div class="material-icons" style="color:#f44336;">favorite</div>
+              <h3 style="color:#f44336;font-weight:bold">AED</h3>
+            </div>
+            <div class="emergency-action" onclick="confirmEmergency('可疑人員','陌生人員闖入警告')">
+              <div class="material-icons" style="color:#f44336;">warning</div>
+              <h3 style="color:#f44336;font-weight:bold">陌生人員闖入</h3>
+            </div>
+          </div>
         </div>
       </section>
 
       <section id="dynamicContent" class="hidden"></section>
     </div>
   </main>
+
+  <!-- AI Customer Service Button and Modal -->
+  <div class="ai-chat-button" onclick="toggleAIChat()">
+     <!-- Replaced image with inline SVG robot icon -->
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="7" y="5" width="10" height="12" rx="2" fill="#222"/>
+      <circle cx="10" cy="9" r="1.5" fill="#FFD93D"/>
+      <circle cx="14" cy="9" r="1.5" fill="#FFD93D"/>
+      <rect x="9" y="12" width="6" height="1.5" rx="0.75" fill="#FFD93D"/>
+      <rect x="5" y="9" width="2" height="4" rx="1" fill="#222"/>
+      <rect x="17" y="9" width="2" height="4" rx="1" fill="#222"/>
+      <circle cx="12" cy="4" r="1.5" fill="#222"/>
+      <rect x="8" y="17" width="2" height="3" rx="1" fill="#222"/>
+      <rect x="14" y="17" width="2" height="3" rx="1" fill="#222"/>
+    </svg>
+  </div>
+
+  <div class="ai-chat-modal" id="aiChatModal">
+    <div class="ai-chat-container">
+      <div class="ai-chat-header">
+        <div class="ai-chat-title">
+           <!-- Updated AI icon in modal header -->
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px">
+            <rect x="7" y="5" width="10" height="12" rx="2" fill="#222"/>
+            <circle cx="10" cy="9" r="1.5" fill="#FFD93D"/>
+            <circle cx="14" cy="9" r="1.5" fill="#FFD93D"/>
+            <rect x="9" y="12" width="6" height="1.5" rx="0.75" fill="#FFD93D"/>
+            <rect x="5" y="9" width="2" height="4" rx="1" fill="#222"/>
+            <rect x="17" y="9" width="2" height="4" rx="1" fill="#222"/>
+            <circle cx="12" cy="4" r="1.5" fill="#222"/>
+            <rect x="8" y="17" width="2" height="3" rx="1" fill="#222"/>
+            <rect x="14" y="17" width="2" height="3" rx="1" fill="#222"/>
+          </svg>
+          AI 客服（社區功能快捷）
+        </div>
+        <button class="ai-chat-close" onclick="toggleAIChat()">✕</button>
+      </div>
+      <div class="ai-chat-tabs">
+        <div class="ai-chat-tab active" data-tab="functions" onclick="switchAITab('functions')">常用功能</div>
+        <div class="ai-chat-tab" data-tab="resident" onclick="switchAITab('resident')">住戶服務</div>
+        <div class="ai-chat-tab" data-tab="emergency" onclick="switchAITab('emergency')">緊急服務</div>
+      </div>
+      <div class="ai-chat-content">
+        <div id="aiTabFunctions" class="ai-function-list">
+          <div class="ai-function-item" onclick="navigateToSection('voting')">📢 投票</div>
+          <div class="ai-function-item" onclick="navigateToSection('maintenance')">🔧 維修 / 客服</div>
+          <div class="ai-function-item" onclick="navigateToSection('finance')">💰 帳務 / 收費</div>
+          <div class="ai-function-item" onclick="navigateToSection('profile')">👤 住戶 / 人員</div>
+          <div class="ai-function-item" onclick="navigateToSection('packages')">📦 訪客 / 包裹</div>
+        </div>
+        <div id="aiTabResident" class="ai-chat-messages hidden">
+          <div class="ai-message bot">您好！我是社區 AI 助理。請問有什麼可以幫助您的嗎？</div>
+          <div class="muted" style="text-align:center;padding:20px">
+            提示：您可以詢問關於公告、維修、繳費、包裹等問題
+          </div>
+        </div>
+        <div id="aiTabEmergency" class="ai-function-list hidden">
+          <div class="ai-function-item" onclick="confirmEmergency('救護車119','醫療緊急狀況');toggleAIChat()">🚑 救護車 119</div>
+          <div class="ai-function-item" onclick="confirmEmergency('報警110','治安緊急狀況');toggleAIChat()">🚨 報警 110</div>
+          <div class="ai-function-item" onclick="confirmEmergency('AED','需要AED急救設備');toggleAIChat()">❤️ AED 急救</div>
+          <div class="ai-function-item" onclick="confirmEmergency('可疑人員','陌生人員闖入警告');toggleAIChat()">⚠️ 陌生人員闖入</div>
+        </div>
+      </div>
+      <div class="ai-chat-input-area" id="aiChatInputArea" style="display:none">
+        <input type="text" class="ai-chat-input" id="aiChatInput" placeholder="請輸入您的問題..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+        <button class="ai-chat-send" onclick="sendAIMessage()">▶</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
@@ -236,6 +552,8 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser=null, currentSection='dashboard';
+    let carouselInterval = null;
+    let currentSlide = 0;
 
     document.addEventListener('DOMContentLoaded',()=>{
       initAuth();
@@ -244,12 +562,25 @@
 
     function toggleSidebar(){
       const sb=document.getElementById('sidebar');
-      if (window.innerWidth<=768) sb.classList.toggle('open');
-      else sb.classList.toggle('collapsed');
+      const main=document.getElementById('main');
+      const overlay=document.getElementById('sidebarOverlay');
+      
+      if (window.innerWidth<=768) {
+        sb.classList.toggle('open');
+        overlay.classList.toggle('active');
+        /* Prevent body scroll when sidebar is open */
+        if (sb.classList.contains('open')) {
+          document.body.style.overflow = 'hidden';
+        } else {
+          document.body.style.overflow = '';
+        }
+      } else {
+        sb.classList.toggle('collapsed');
+        main.classList.toggle('expanded');
+      }
     }
 
     function bindNav(){
-      // left sidebar links
       document.querySelectorAll('.nav-link').forEach(a=>{
         a.addEventListener('click',(e)=>{
           e.preventDefault();
@@ -257,7 +588,6 @@
           switchSection(sec);
         });
       });
-      // quick actions
       document.querySelectorAll('.action').forEach(x=>{
         x.addEventListener('click',()=>switchSection(x.dataset.section));
       });
@@ -268,14 +598,36 @@
       const active = document.querySelector(`.nav-link[data-section="${section}"]`);
       if (active) active.classList.add('active');
 
-      const titles={dashboard:'首頁',announcements:'公告/投票',maintenance:'設備/維護',finance:'管理費/收支',residents:'住戶/人員',visitors:'訪客/包裹',meetings:'會議/活動',emergencies:'緊急'};
+      const titles={
+        dashboard:'首頁',
+        voting:'投票',
+        maintenance:'設備/維護',
+        finance:'管理費/收支',
+        profile:'個人資料',
+        packages:'我的包裹',
+        visitors:'訪客紀錄',
+        meetings:'會議/活動',
+        emergencies:'緊急'
+      };
       document.getElementById('pageTitle').textContent = titles[section] || '首頁';
 
       const dash = document.getElementById('dashboardSection');
       const dyn  = document.getElementById('dynamicContent');
-      if (section==='dashboard'){ dash.classList.remove('hidden'); dyn.classList.add('hidden'); currentSection='dashboard'; return; }
+      if (section==='dashboard'){ 
+        dash.classList.remove('hidden'); 
+        dyn.classList.add('hidden'); 
+        currentSection='dashboard';
+        loadCarousel();
+        return; 
+      }
 
-      dash.classList.add('hidden'); dyn.classList.remove('hidden'); currentSection=section;
+      dash.classList.add('hidden'); 
+      dyn.classList.remove('hidden'); 
+      currentSection=section;
+      if (carouselInterval) {
+        clearInterval(carouselInterval);
+        carouselInterval = null;
+      }
       loadSection(section);
     }
 
@@ -287,48 +639,100 @@
         document.getElementById('userName').textContent = currentUser.name || '未知用戶';
         document.getElementById('userRole').textContent = ({resident:'住戶',committee:'委員會',vendor:'廠商',admin:'管理員'})[currentUser.role] || '住戶';
         document.getElementById('userAvatar').textContent = (currentUser.name||'U').charAt(0).toUpperCase();
-        await refreshDashboard();
-        await loadRecentAnnouncements();
+        await loadCarousel();
       }catch(e){ localStorage.removeItem('currentUser'); window.location.href='auth.html'; }
     }
 
-    async function refreshDashboard(){
+    async function loadCarousel(){
+      if (carouselInterval) clearInterval(carouselInterval);
+      
       try{
-        const start = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-        const { count: announcementCount } = await supabase.from('announcements').select('*',{count:'exact',head:true}).eq('status','published').gte('created_at',start);
-        document.getElementById('announcementCount').textContent = announcementCount || 0;
-        const { count: maintenanceCount } = await supabase.from('maintenance').select('*',{count:'exact',head:true}).in('status',['open','progress','pending','in_progress']);
-        document.getElementById('maintenanceCount').textContent = maintenanceCount || 0;
-        const { count: residentCount } = await supabase.from('residents').select('*',{count:'exact',head:true});
-        document.getElementById('residentCount').textContent = residentCount || 0;
-        const { count: eventCount } = await supabase.from('meetings').select('*',{count:'exact',head:true}).gte('time',start);
-        document.getElementById('eventCount').textContent = eventCount || 0;
-      }catch(e){ console.error(e); }
-    }
-
-    async function loadRecentAnnouncements(){
-      try{
-        const { data, error } = await supabase.from('announcements').select('id,title,content,created_at,author,status').eq('status','published').order('created_at',{ascending:false}).limit(5);
-        const box = document.getElementById('recentAnnouncements');
+        const { data, error } = await supabase
+          .from('announcements')
+          .select('id,title,content,image_url,author,created_at')
+          .eq('status','published')
+          .order('created_at',{ascending:false})
+          .limit(5);
+        
         if (error) throw error;
-        if (!data || !data.length){ box.innerHTML='<div class="announcement-item">暫無公告</div>'; return; }
-        box.innerHTML = data.map(a=>`
-          <div class="announcement-item">
-            <div class="announcement-title">${a.title||''}</div>
-            <div class="muted">${(a.content||'').slice(0,150)}${(a.content||'').length>150?'...':''}</div>
-            <div class="announcement-meta">
-              <span>發布者: ${a.author||'系統'}</span>
-              <span>${new Date(a.created_at).toLocaleDateString('zh-TW')}</span>
+        
+        const container = document.getElementById('announcementCarousel');
+        if (!data || !data.length){ 
+          container.innerHTML='<div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">暫無公告</div>'; 
+          return; 
+        }
+
+        container.innerHTML = data.map((a, idx)=>`
+          <div class="carousel-slide ${idx===0?'active':''}" style="background-image:url('${a.image_url || '/placeholder.svg?height=400&width=1200'}')">
+            <div class="carousel-content">
+              <div class="carousel-title">${a.title||''}</div>
+              <div class="carousel-text">${(a.content||'').slice(0,200)}${(a.content||'').length>200?'...':''}</div>
+              <div class="muted">發布者: ${a.author||'系統'} | ${new Date(a.created_at).toLocaleDateString('zh-TW')}</div>
             </div>
-          </div>`).join('');
+          </div>
+        `).join('') + `
+          <div class="carousel-indicators">
+            ${data.map((_, idx)=>`<div class="carousel-indicator ${idx===0?'active':''}" onclick="goToSlide(${idx})"></div>`).join('')}
+          </div>
+        `;
+        /* Removed carousel navigation buttons from HTML */
+
+        currentSlide = 0;
+        carouselInterval = setInterval(nextSlide, 5000);
       }catch(e){
         console.error(e);
-        document.getElementById('recentAnnouncements').innerHTML = '<div class="announcement-item">公告載入失敗</div>';
+        document.getElementById('announcementCarousel').innerHTML = '<div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">公告載入失敗</div>';
       }
     }
 
+    function nextSlide(){
+      const slides = document.querySelectorAll('.carousel-slide');
+      const indicators = document.querySelectorAll('.carousel-indicator');
+      if (!slides.length) return;
+      
+      slides[currentSlide].classList.remove('active');
+      indicators[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide + 1) % slides.length;
+      slides[currentSlide].classList.add('active');
+      indicators[currentSlide].classList.add('active');
+    }
+
+    function prevSlide(){
+      const slides = document.querySelectorAll('.carousel-slide');
+      const indicators = document.querySelectorAll('.carousel-indicator');
+      if (!slides.length) return;
+      
+      slides[currentSlide].classList.remove('active');
+      indicators[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+      slides[currentSlide].classList.add('active');
+      indicators[currentSlide].classList.add('active');
+    }
+
+    function goToSlide(index){
+      const slides = document.querySelectorAll('.carousel-slide');
+      const indicators = document.querySelectorAll('.carousel-indicator');
+      if (!slides.length) return;
+      
+      slides[currentSlide].classList.remove('active');
+      indicators[currentSlide].classList.remove('active');
+      currentSlide = index;
+      slides[currentSlide].classList.add('active');
+      indicators[currentSlide].classList.add('active');
+    }
+
     function loadSection(section){
-      const meta = {announcements:['campaign','公告管理'],maintenance:['build','維修管理'],finance:['account_balance','財務管理'],residents:['people','住戶管理'],visitors:['how_to_reg','訪客管理'],meetings:['event','會議管理'],emergencies:['emergency','緊急服務']}[section] || ['dashboard','功能'];
+      const meta = {
+        voting:['how_to_vote','投票'],
+        maintenance:['build','維修申請'],
+        finance:['account_balance','財務管理'],
+        profile:['person','個人資料'],
+        packages:['inventory_2','我的包裹'],
+        visitors:['how_to_reg','訪客管理'],
+        meetings:['event','會議管理'],
+        emergencies:['emergency','緊急服務']
+      }[section] || ['dashboard','功能'];
+      
       const dyn = document.getElementById('dynamicContent');
       dyn.innerHTML = `
         <div class="card">
@@ -337,10 +741,11 @@
         </div>`;
 
       switch(section){
-        case 'announcements': loadAnnouncements(); break;
-        case 'maintenance': loadMaintenance(); break;
+        case 'voting': loadVotingOnly(); break;
+        case 'maintenance': loadMaintenanceForm(); break;
         case 'finance': loadFinance(); break;
-        case 'residents': loadResidents(); break;
+        case 'profile': loadProfile(); break;
+        case 'packages': loadPackages(); break;
         case 'visitors': loadVisitors(); break;
         case 'meetings': loadMeetings(); break;
         case 'emergencies': loadEmergencies(); break;
@@ -348,22 +753,408 @@
       }
     }
 
-    async function loadAnnouncements(){
-      const el=document.getElementById('announcementsSection');
+    async function loadVotingOnly(){
+      const el=document.getElementById('votingSection');
       try{
-        const { data, error } = await supabase.from('announcements').select('title,content,author,created_at').order('created_at',{ascending:false}).limit(6);
+        const { data: votes, error } = await supabase
+          .from('votes')
+          .select('*')
+          .order('created_at',{ascending:false})
+          .limit(20);
+        
         if (error) throw error;
-        el.innerHTML = (data||[]).map(a=>`<div class="announcement-item"><div class="announcement-title">${a.title}</div><div class="muted">${(a.content||'').slice(0,100)}...</div><div class="announcement-meta"><span>作者:${a.author||'-'}</span><span>${new Date(a.created_at).toLocaleDateString('zh-TW')}</span></div></div>`).join('') || '<div class="announcement-item">暫無公告</div>';
-      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">公告載入失敗</div>'; }
+        
+        el.innerHTML = (votes||[]).map(v => renderVoteCard(v)).join('') || '<div class="muted">暫無投票</div>';
+
+        // Bind vote buttons
+        (votes||[]).forEach(v => {
+          const btn = document.getElementById(`vote-btn-${v.id}`);
+          if (btn) btn.onclick = () => submitVote(v.id);
+          loadVoteResults(v.id);
+        });
+      }catch(e){ 
+        console.error(e); 
+        el.innerHTML='<div class="muted">載入失敗: ' + e.message + '</div>'; 
+      }
     }
 
-    async function loadMaintenance(){
-      const el=document.getElementById('maintenanceSection');
+
+    function renderVoteCard(vote){
+      const options = Array.isArray(vote.options) ? vote.options : JSON.parse(vote.options || '[]');
+      const isClosed = vote.status === 'closed';
+      
+      return `
+        <div class="vote-card" id="vote-card-${vote.id}">
+          <div class="vote-header">
+            <div class="vote-title">${vote.title}</div>
+            <div class="vote-status ${isClosed?'closed':'open'}">${isClosed?'已結束':'進行中'}</div>
+          </div>
+          <div class="muted" style="margin-bottom:12px">${vote.description||''}</div>
+          <div class="vote-options" id="vote-options-${vote.id}">
+            ${options.map((opt, idx) => `
+              <div class="vote-option" data-option="${opt}">
+                ${!isClosed ? `<input type="radio" name="vote-${vote.id}" value="${opt}">` : ''}
+                <div class="vote-option-label">${opt}</div>
+                <div class="vote-count" id="vote-count-${vote.id}-${idx}">載入中...</div>
+              </div>
+              <div class="vote-result-bar"><div class="vote-result-fill" id="vote-fill-${vote.id}-${idx}" style="width:0%"></div></div>
+            `).join('')}
+          </div>
+          ${!isClosed ? `<button class="vote-btn" id="vote-btn-${vote.id}">送出投票</button>` : ''}
+          <div class="muted" id="vote-status-${vote.id}" style="margin-top:12px;text-align:center"></div>
+          <div class="muted" style="margin-top:8px;font-size:0.85rem">
+            發布者: ${vote.author||'系統'} | ${new Date(vote.created_at).toLocaleDateString('zh-TW')}
+            ${vote.ends_at ? ` | 截止: ${new Date(vote.ends_at).toLocaleDateString('zh-TW')}` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadVoteResults(voteId){
       try{
-        const { data, error } = await supabase.from('maintenance').select('equipment,item,status,handler,cost,created_at').order('created_at',{ascending:false}).limit(6);
+        const { data: records, error } = await supabase
+          .from('vote_records')
+          .select('option_selected, user_id')
+          .eq('vote_id', voteId);
+        
         if (error) throw error;
-        el.innerHTML = (data||[]).map(m=>`<div class="announcement-item"><div class="announcement-title">${m.equipment} - ${m.item}</div><div class="muted">狀態:${m.status} / 費用:$${m.cost}</div><div class="announcement-meta"><span>處理人:${m.handler||'未指派'}</span><span>${new Date(m.created_at).toLocaleDateString('zh-TW')}</span></div></div>`).join('') || '<div class="announcement-item">暫無維修紀錄</div>';
-      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">維修資料載入失敗</div>'; }
+
+        const { data: vote } = await supabase
+          .from('votes')
+          .select('options')
+          .eq('id', voteId)
+          .single();
+        
+        const options = Array.isArray(vote?.options) ? vote.options : JSON.parse(vote?.options || '[]');
+        const voteCounts = {};
+        options.forEach(opt => voteCounts[opt] = 0);
+        
+        let userVoted = false;
+        let userOption = null;
+        
+        (records||[]).forEach(r => {
+          voteCounts[r.option_selected] = (voteCounts[r.option_selected] || 0) + 1;
+          if (currentUser && r.user_id === currentUser.id) {
+            userVoted = true;
+            userOption = r.option_selected;
+          }
+        });
+        
+        const totalVotes = Object.values(voteCounts).reduce((sum, count) => sum + count, 0);
+        
+        options.forEach((opt, idx) => {
+          const count = voteCounts[opt] || 0;
+          const percentage = totalVotes > 0 ? (count / totalVotes * 100).toFixed(1) : 0;
+          const countEl = document.getElementById(`vote-count-${voteId}-${idx}`);
+          const fillEl = document.getElementById(`vote-fill-${voteId}-${idx}`);
+          if (countEl) countEl.textContent = `${count} 票 (${percentage}%)`;
+          if (fillEl) fillEl.style.width = `${percentage}%`;
+        });
+        
+        const statusEl = document.getElementById(`vote-status-${voteId}`);
+        if (statusEl && userVoted) {
+          statusEl.textContent = `✓ 您已投票給: ${userOption}`;
+          const btn = document.getElementById(`vote-btn-${voteId}`);
+          if (btn) btn.style.display = 'none';
+        }
+        
+        return userVoted;
+      }catch(e){
+        console.error(e);
+      }
+    }
+
+    function selectVoteOption(voteId, option){
+      const radio = document.querySelector(`input[name="vote-${voteId}"][value="${option}"]`);
+      if (radio) radio.checked = true;
+    }
+
+    async function submitVote(voteId){
+      if (!currentUser) { alert('請先登入'); return; }
+      
+      const selectedOption = document.querySelector(`input[name="vote-${voteId}"]:checked`);
+      if (!selectedOption) { alert('請選擇一個選項'); return; }
+
+      try{
+        const { error } = await supabase
+          .from('vote_records')
+          .insert({
+            vote_id: voteId,
+            user_id: currentUser.id,
+            user_name: currentUser.name,
+            option_selected: selectedOption.value
+          });
+
+        if (error) {
+          if (error.code === '23505') { // Unique constraint violation
+            alert('您已經投過票了');
+          } else {
+            throw error;
+          }
+          return;
+        }
+
+        alert('投票成功!');
+        await loadVoteResults(voteId);
+      }catch(e){
+        console.error(e);
+        alert('投票失敗: ' + e.message);
+      }
+    }
+
+    async function loadMaintenanceForm(){
+      const el=document.getElementById('maintenanceSection');
+      el.innerHTML = `
+        <form id="maintenanceForm" onsubmit="submitMaintenance(event)">
+          <div class="form-group">
+            <label class="form-label">設備名稱</label>
+            <input type="text" class="form-input" id="equipment" required placeholder="例: 電梯、水管、門禁">
+          </div>
+          <div class="form-group">
+            <label class="form-label">問題項目</label>
+            <input type="text" class="form-input" id="item" required placeholder="例: 故障、漏水、損壞">
+          </div>
+          <div class="form-group">
+            <label class="form-label">詳細描述</label>
+            <textarea class="form-textarea" id="description" required placeholder="請詳細描述問題狀況..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">上傳照片 (選填)</label>
+            <div class="file-upload">
+              <label for="photoUpload" class="file-upload-btn">
+                <span class="material-icons">add_photo_alternate</span>
+                <span id="fileName">選擇照片</span>
+              </label>
+              <input type="file" id="photoUpload" accept="image/*" onchange="previewPhoto(event)">
+            </div>
+            <img id="photoPreview" class="file-preview hidden" alt="照片預覽">
+          </div>
+          <button type="submit" class="submit-btn">送出維修申請</button>
+        </form>
+
+        <h3 style="color:var(--accent-color);margin:24px 0 12px">我的維修申請</h3>
+        <div id="myMaintenanceList"><div class="muted">載入中...</div></div>
+      `;
+
+      loadMyMaintenance();
+    }
+
+    function previewPhoto(event){
+      const file = event.target.files[0];
+      const preview = document.getElementById('photoPreview');
+      const fileName = document.getElementById('fileName');
+      
+      if (file) {
+        fileName.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          preview.src = e.target.result;
+          preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function submitMaintenance(event){
+      event.preventDefault();
+      if (!currentUser) { alert('請先登入'); return; }
+
+      const equipment = document.getElementById('equipment').value;
+      const item = document.getElementById('item').value;
+      const description = document.getElementById('description').value;
+      const photoFile = document.getElementById('photoUpload').files[0];
+
+      try{
+        let photoUrl = null;
+        if (photoFile) {
+          // Convert to base64 for demo (in production, use proper file storage)
+          const reader = new FileReader();
+          photoUrl = await new Promise((resolve) => {
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(photoFile);
+          });
+        }
+
+        const { error } = await supabase
+          .from('maintenance')
+          .insert({
+            equipment,
+            item,
+            description,
+            photo_url: photoUrl,
+            reported_by: currentUser.name,
+            status: 'open',
+            handler: '',
+            assignee: '',
+            cost: 0
+          });
+
+        if (error) throw error;
+
+        alert('維修申請已送出!');
+        document.getElementById('maintenanceForm').reset();
+        document.getElementById('photoPreview').classList.add('hidden');
+        document.getElementById('fileName').textContent = '選擇照片';
+        loadMyMaintenance();
+      }catch(e){
+        console.error(e);
+        alert('送出失敗: ' + e.message);
+      }
+    }
+
+    async function loadMyMaintenance(){
+      const el = document.getElementById('myMaintenanceList');
+      if (!el) return;
+      
+      try{
+        /* Load ALL maintenance records, not just current user's */
+        const { data, error } = await supabase
+          .from('maintenance')
+          .select('*')
+          .order('created_at', {ascending:false});
+
+        if (error) throw error;
+
+        el.innerHTML = (data||[]).map(m=>`
+          <div class="announcement-item">
+            <div class="announcement-title">${m.equipment} - ${m.item}</div>
+            <div class="muted">${m.description||''}</div>
+            ${m.photo_url ? `<img src="${m.photo_url}" style="max-width:200px;border-radius:8px;margin-top:8px" alt="維修照片">` : ''}
+            <div class="announcement-meta">
+              <span>報修人: ${m.reported_by||'未知'}</span>
+              <span>狀態: ${m.status}</span>
+              <span>處理人: ${m.handler||'未指派'}</span>
+              <span>${new Date(m.created_at).toLocaleDateString('zh-TW')}</span>
+            </div>
+          </div>
+        `).join('') || '<div class="muted">暫無維修申請</div>';
+      }catch(e){
+        console.error(e);
+        el.innerHTML = '<div class="muted">載入失敗</div>';
+      }
+    }
+
+    async function loadProfile(){
+      const el=document.getElementById('profileSection');
+      if (!currentUser) { el.innerHTML='<div class="muted">請先登入</div>'; return; }
+
+      try{
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (error) throw error;
+
+        el.innerHTML = `
+          <div class="profile-card">
+            <div class="profile-avatar-large">${(data.name||'U').charAt(0).toUpperCase()}</div>
+            <div class="profile-field">
+              <div class="profile-field-label">姓名</div>
+              <input type="text" class="profile-field-value" id="profileName" value="${data.name||''}">
+            </div>
+            <div class="profile-field">
+              <div class="profile-field-label">房號</div>
+              <input type="text" class="profile-field-value" id="profileRoom" value="${data.room||''}">
+            </div>
+            <div class="profile-field">
+              <div class="profile-field-label">電話</div>
+              <input type="text" class="profile-field-value" id="profilePhone" value="${data.phone||''}">
+            </div>
+            <div class="profile-field">
+              <div class="profile-field-label">Email</div>
+              <input type="email" class="profile-field-value" id="profileEmail" value="${data.email||''}">
+            </div>
+            <div class="profile-field">
+              <div class="profile-field-label">密碼</div>
+              <input type="password" class="profile-field-value" id="profilePassword" placeholder="留空表示不修改">
+            </div>
+            <div class="profile-field">
+              <div class="profile-field-label">身分</div>
+              <div class="profile-field-value" style="background:rgba(255,255,255,0.02);cursor:not-allowed">${data.role||'resident'}</div>
+            </div>
+            <div class="profile-actions">
+              <button class="profile-btn primary" onclick="saveProfile()">儲存變更</button>
+              <button class="profile-btn secondary" onclick="loadProfile()">取消</button>
+            </div>
+          </div>
+        `;
+      }catch(e){
+        console.error(e);
+        el.innerHTML = '<div class="muted">載入失敗: ' + e.message + '</div>';
+      }
+    }
+
+    async function saveProfile(){
+      if (!currentUser) { alert('請先登入'); return; }
+
+      const name = document.getElementById('profileName').value;
+      const room = document.getElementById('profileRoom').value;
+      const phone = document.getElementById('profilePhone').value;
+      const email = document.getElementById('profileEmail').value;
+      const password = document.getElementById('profilePassword').value;
+
+      try{
+        const updates = { name, room, phone, email };
+        if (password) updates.password = password;
+
+        const { error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', currentUser.id);
+
+        if (error) throw error;
+
+        // Update local storage
+        currentUser.name = name;
+        currentUser.room = room;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        alert('個人資料已更新!');
+        document.getElementById('userName').textContent = name;
+        document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
+      }catch(e){
+        console.error(e);
+        alert('更新失敗: ' + e.message);
+      }
+    }
+
+    async function loadPackages(){
+      const el=document.getElementById('packagesSection');
+      if (!currentUser) { el.innerHTML='<div class="muted">請先登入</div>'; return; }
+
+      try{
+        const { data, error } = await supabase
+          .from('packages')
+          .select('*')
+          .eq('recipient_room', currentUser.room)
+          .order('arrived_at', {ascending:false})
+          .limit(20);
+
+        if (error) throw error;
+
+        el.innerHTML = `
+          <div class="package-list">
+            ${(data||[]).map(p=>`
+              <div class="package-item">
+                <div class="package-info">
+                  <div style="font-weight:700;margin-bottom:4px">${p.courier||'包裹'} ${p.tracking_number?`(${p.tracking_number})`:''}</div>
+                  <div class="muted">收件人: ${p.recipient_name} | 到達時間: ${new Date(p.arrived_at).toLocaleString('zh-TW')}</div>
+                  ${p.picked_up_at ? `<div class="muted">領取時間: ${new Date(p.picked_up_at).toLocaleString('zh-TW')}</div>` : ''}
+                  ${p.notes ? `<div class="muted">備註: ${p.notes}</div>` : ''}
+                </div>
+                <div class="package-status ${p.status==='picked-up'?'picked-up':'pending'}">
+                  ${p.status==='picked-up'?'已領取':'待領取'}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` || '<div class="muted">暫無包裹</div>';
+      }catch(e){
+        console.error(e);
+        el.innerHTML = '<div class="muted">載入失敗</div>';
+      }
     }
 
     async function loadFinance(){
@@ -373,15 +1164,6 @@
         if (error) throw error;
         el.innerHTML = (data||[]).map(f=>`<div class="announcement-item"><div class="announcement-title">房號 ${f.room}</div><div class="muted">金額:$${f.amount}　到期日:${new Date(f.due).toLocaleDateString('zh-TW')}</div><div class="announcement-meta"><span>狀態:${f.paid?'已繳':'未繳'}</span></div></div>`).join('') || '<div class="announcement-item">暫無財務紀錄</div>';
       }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">財務資料載入失敗</div>'; }
-    }
-
-    async function loadResidents(){
-      const el=document.getElementById('residentsSection');
-      try{
-        const { data, error } = await supabase.from('residents').select('name,room,phone,email,role,created_at').order('created_at',{ascending:false}).limit(20);
-        if (error) throw error;
-        el.innerHTML = (data||[]).map(r=>`<div class="announcement-item"><div class="announcement-title">${r.name} (${r.room})</div><div class="muted">電話:${r.phone||'-'} / Email:${r.email||'-'}</div><div class="announcement-meta"><span>角色:${r.role}</span><span>${new Date(r.created_at).toLocaleDateString('zh-TW')}</span></div></div>`).join('') || '<div class="announcement-item">暫無住戶資料</div>';
-      }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">住戶資料載入失敗</div>'; }
     }
 
     async function loadVisitors(){
@@ -411,109 +1193,159 @@
       }catch(e){ console.error(e); el.innerHTML='<div class="announcement-item">緊急資料載入失敗</div>'; }
     }
 
-    
-function confirmEmergency(type, note){
-  if (confirm(`確定要送出「${type}」事件嗎？`)) {
-    triggerEmergency(type, note);
-  }
-}
-
-async function triggerEmergency(type, note){
-  if (!currentUser){ alert("尚未登入"); return; }
-  try{
-    const payload = {
-      type: type,
-      note: note,
-      time: new Date().toISOString(),
-      ["by"]: currentUser.name || '未知'
-    };
-
-    const { data, error } = await supabase.from('emergencies').insert([payload]).select();
-    if (error) {
-      console.error("Supabase insert error:", error);
-      alert("送出失敗：" + error.message);
-      return;
+    function confirmEmergency(type, note){
+      if (confirm(`確定要送出「${type}」事件嗎？`)) {
+        triggerEmergency(type, note);
+      }
     }
 
-    if (data && data.length > 0){
-      const x = data[0];
-      const el = document.getElementById('emergencyList');
-      const item = `
-        <div class="announcement-item" style="border-left:4px solid #f44336;">
-          <div class="announcement-title" style="color:#f44336;font-weight:bold">${x.type}</div>
-          <div class="muted">${x.note||''}</div>
-          <div class="announcement-meta">
-            <span>使用者:${x.by||'-'}</span>
-            <span>${new Date(x.time).toLocaleString('zh-TW')}</span>
-          </div>
-        </div>
-      `;
-      if (el) el.innerHTML = item + el.innerHTML;
-    }
-  }catch(e){
-    console.error("triggerEmergency exception:", e);
-    alert("送出失敗：" + e.message);
-  }
-}
+    async function triggerEmergency(type, note){
+      if (!currentUser){ alert("尚未登入"); return; }
+      try{
+        const payload = {
+          type: type,
+          note: note,
+          time: new Date().toISOString(),
+          ["by"]: currentUser.name || '未知'
+        };
 
-async function loadEmergenciesList(){
-  const el=document.getElementById('emergencyList');
-  if (!el) return;
-  try{
-    const { data, error } = await supabase
-      .from('emergencies')
-      .select('type,time,by,note')
-      .order('time',{ascending:false})
-      .limit(10);
-    if (error) { console.error(error); el.innerHTML='<div class="muted">緊急資料載入失敗</div>'; return; }
-    el.innerHTML = (data||[]).map(x=>`
-      <div class="announcement-item" style="border-left:4px solid #f44336;">
-        <div class="announcement-title" style="color:#f44336;font-weight:bold">${x.type}</div>
-        <div class="muted">${x.note||''}</div>
-        <div class="announcement-meta">
-          <span>使用者:${x.by||'-'}</span>
-          <span>${new Date(x.time).toLocaleString('zh-TW')}</span>
-        </div>
-      </div>
-    `).join('') || '<div class="muted">暫無緊急紀錄</div>';
-  }catch(e){
-    console.error(e);
-    el.innerHTML='<div class="muted">緊急資料載入失敗</div>';
-  }
-}
-
-document.addEventListener('DOMContentLoaded', ()=>{ loadEmergenciesList(); });
-
-function logout(){ localStorage.removeItem('currentUser'); window.location.href='index.html'; }
-
-    
-  
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebar = document.getElementById('sidebar');
-    const main = document.getElementById('mainContent');
-
-    if (!sidebar || !main) return;
-
-    });
-
-
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebar = document.getElementById('sidebar');
-    const main = document.getElementById('mainContent');
-
-    if (!sidebar || !main) return;
-
-    window.addEventListener('resize', function() {
-        if (window.innerWidth <= 768) {
-            sidebar.classList.add('collapsed');
-            main.classList.add('expanded');
-        } else {
-            sidebar.classList.remove('collapsed');
-            main.classList.remove('expanded');
+        const { data, error } = await supabase.from('emergencies').insert([payload]).select();
+        if (error) {
+          console.error("Supabase insert error:", error);
+          alert("送出失敗：" + error.message);
+          return;
         }
-    });
-});
 
-</script>
+        if (data && data.length > 0){
+          const x = data[0];
+          const el = document.getElementById('emergencyList');
+          const item = `
+            <div class="announcement-item" style="border-left:4px solid #f44336;">
+              <div class="announcement-title" style="color:#f44336;font-weight:bold">${x.type}</div>
+              <div class="muted">${x.note||''}</div>
+              <div class="announcement-meta">
+                <span>使用者:${x.by||'-'}</span>
+                <span>${new Date(x.time).toLocaleString('zh-TW')}</span>
+              </div>
+            </div>
+          `;
+          if (el) el.innerHTML = item + el.innerHTML;
+        }
+      }catch(e){
+        console.error("triggerEmergency exception:", e);
+        alert("送出失敗：" + e.message);
+      }
+    }
+
+    function toggleAIChat(){
+      const modal = document.getElementById('aiChatModal');
+      modal.classList.toggle('active');
+    }
+
+    function switchAITab(tab){
+      document.querySelectorAll('.ai-chat-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.ai-chat-tab[data-tab="${tab}"]`).classList.add('active');
+      
+      document.getElementById('aiTabFunctions').classList.add('hidden');
+      document.getElementById('aiTabResident').classList.add('hidden');
+      document.getElementById('aiTabEmergency').classList.add('hidden');
+      document.getElementById('aiChatInputArea').style.display = 'none';
+      
+      if (tab === 'functions') {
+        document.getElementById('aiTabFunctions').classList.remove('hidden');
+      } else if (tab === 'resident') {
+        document.getElementById('aiTabResident').classList.remove('hidden');
+        document.getElementById('aiChatInputArea').style.display = 'flex';
+      } else if (tab === 'emergency') {
+        document.getElementById('aiTabEmergency').classList.remove('hidden');
+      }
+    }
+
+    function navigateToSection(section){
+      toggleAIChat();
+      switchSection(section);
+    }
+
+    async function sendAIMessage(){
+      const input = document.getElementById('aiChatInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const messagesContainer = document.getElementById('aiTabResident');
+      
+      // Add user message
+      const userMsg = document.createElement('div');
+      userMsg.className = 'ai-message user';
+      userMsg.textContent = message;
+      messagesContainer.appendChild(userMsg);
+      
+      input.value = '';
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      // Simple AI response based on keywords
+      setTimeout(async () => {
+        const botMsg = document.createElement('div');
+        botMsg.className = 'ai-message bot';
+        
+        let response = await getAIResponse(message);
+        botMsg.textContent = response;
+        
+        messagesContainer.appendChild(botMsg);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }, 500);
+    }
+
+    async function getAIResponse(message){
+      const msg = message.toLowerCase();
+      
+      // Try to fetch from knowledge base
+      try{
+        const { data, error } = await supabase
+          .from('knowledge')
+          .select('content');
+        
+        if (!error && data) {
+          for (let item of data) {
+            const content = item.content.toLowerCase();
+            if (msg.includes('公告') && content.includes('公告')) return item.content;
+            if (msg.includes('投票') && content.includes('投票')) return item.content;
+            if (msg.includes('維修') && content.includes('維修')) return item.content;
+            if (msg.includes('包裹') && content.includes('包裹')) return item.content;
+            if (msg.includes('管理費') && content.includes('管理費')) return item.content;
+            if (msg.includes('停車') && content.includes('停車')) return item.content;
+            if (msg.includes('門禁') && content.includes('門禁')) return item.content;
+            if (msg.includes('垃圾') && content.includes('垃圾')) return item.content;
+            if (msg.includes('寵物') && content.includes('寵物')) return item.content;
+            if (msg.includes('裝修') && content.includes('裝修')) return item.content;
+          }
+        }
+      }catch(e){
+        console.error(e);
+      }
+      
+      if (msg.includes('公告')) {
+        return '您可以在「公告」頁面查看最新公告。公告會以輪播方式顯示在首頁。';
+      }
+      if (msg.includes('投票')) {
+        return '您可以在「投票」頁面查看所有投票並參與投票。每個投票都會顯示即時統計結果。';
+      }
+      if (msg.includes('維修') || msg.includes('報修')) {
+        return '您可以在「設備/維護」頁面提交維修申請，包括設備名稱、問題描述和照片。提交後可以在「我的維修申請」中查看處理狀態。';
+      }
+      if (msg.includes('包裹') || msg.includes('快遞')) {
+        return '您可以在「我的包裹」頁面查看包裹領取狀況，包括快遞公司、追蹤號碼和到達時間。';
+      }
+      if (msg.includes('管理費') || msg.includes('繳費')) {
+        return '您可以在「管理費/收支」頁面查看繳費狀況。如有問題請聯繫管委會。';
+      }
+      if (msg.includes('個人') || msg.includes('資料') || msg.includes('密碼')) {
+        return '您可以在「個人資料」頁面修改姓名、房號、電話、Email 和密碼。';
+      }
+      
+      return '抱歉,我還在學習中。您可以詢問關於公告、維修、繳費、包裹等問題，或使用「常用功能」快速導航。';
+    }
+
+    function logout(){ localStorage.removeItem('currentUser'); window.location.href='index.html'; }
+  </script>
 </body>
 </html>
