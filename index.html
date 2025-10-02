@@ -29,27 +29,25 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100vh;
+            overflow: hidden;
+        }
+
         body {
             font-family: 'Roboto', sans-serif;
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: var(--text-primary);
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
             background: rgba(45, 45, 45, 0.9);
             backdrop-filter: blur(10px);
             padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
             border-bottom: 2px solid var(--accent-color);
+            flex-shrink: 0;
         }
 
         .header-content {
@@ -72,37 +70,49 @@
             gap: 1rem;
         }
 
+        .main-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
         .hero-section {
             text-align: center;
-            padding: 4rem 0;
+            padding: 3rem 0;
             background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/placeholder.svg?height=600&width=1200') center/cover;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             border-radius: 15px;
         }
 
         .hero-title {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: 1rem;
             color: var(--accent-color);
         }
 
         .hero-subtitle {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: var(--text-secondary);
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .announcements-section {
             background: rgba(45, 45, 45, 0.8);
             border-radius: 15px;
             padding: 2rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             border: 1px solid var(--accent-color);
         }
 
         .section-title {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 600;
             margin-bottom: 1.5rem;
             color: var(--accent-color);
@@ -134,15 +144,15 @@
 
         .modules-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .module-card {
             background: rgba(45, 45, 45, 0.8);
             border-radius: 15px;
-            padding: 2rem;
+            padding: 1.5rem;
             text-align: center;
             border: 1px solid rgba(255, 215, 0, 0.3);
             transition: all 0.3s ease;
@@ -156,7 +166,7 @@
         }
 
         .module-icon {
-            font-size: 3rem;
+            font-size: 2.5rem;
             color: var(--accent-color);
             margin-bottom: 1rem;
         }
@@ -171,7 +181,7 @@
 
         .emergency-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 1rem;
             margin-top: 1.5rem;
         }
@@ -179,7 +189,7 @@
         .emergency-card {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            padding: 1.5rem;
+            padding: 1.2rem;
             display: flex;
             align-items: center;
             gap: 1rem;
@@ -201,6 +211,7 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            font-size: 1rem;
         }
 
         .btn-primary {
@@ -238,18 +249,85 @@
             display: none !important;
         }
 
+        /* Enhanced responsive design for mobile */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .modules-grid {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 1.2rem;
+            }
+        }
+
         @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 0.8rem;
+                padding: 10px 15px;
+            }
+            
+            .logo {
+                font-size: 1.1rem;
+            }
+            
+            .nav-buttons {
+                width: 100%;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+            
+            .nav-buttons .btn {
+                flex: 1;
+                justify-content: center;
+                padding: 8px 14px;
+                font-size: 0.85rem;
+            }
+            
+            .hero-section {
+                padding: 2rem 1rem;
+                margin-bottom: 1.5rem;
+            }
+            
             .hero-title {
-                font-size: 2rem;
+                font-size: 1.6rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 0.95rem;
             }
             
             .modules-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
             }
             
-            .nav-buttons {
-                flex-direction: column;
-                gap: 0.5rem;
+            .module-card {
+                padding: 1.2rem;
+            }
+            
+            .module-icon {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .hero-title {
+                font-size: 1.3rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 0.85rem;
+            }
+            
+            .btn {
+                padding: 8px 14px;
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -272,109 +350,54 @@
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="container">
-        <!-- Hero Section -->
-        <section class="hero-section">
-            <h1 class="hero-title">歡迎來到社區管理系統</h1>
-            <p class="hero-subtitle">現代化的社區管理解決方案，讓居民生活更便利</p>
-            <button class="btn btn-primary" onclick="showLogin()">
-                <span class="material-icons">dashboard</span>
-                進入系統
-            </button>
-        </section>
+    <!-- Wrapped main content in scrollable container -->
+    <div class="main-wrapper">
+        <main class="container">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <h1 class="hero-title">歡迎來到社區管理系統</h1>
+                <p class="hero-subtitle">現代化的社區管理解決方案，讓居民生活更便利</p>
+                <button class="btn btn-primary" onclick="showLogin()">
+                    <span class="material-icons">dashboard</span>
+                    進入系統
+                </button>
+            </section>
 
-        <!-- Latest Announcements -->
-        <section class="announcements-section">
-            <h2 class="section-title">
-                <span class="material-icons">campaign</span>
-                最新公告
-            </h2>
-            <div class="announcement-carousel" id="announcementCarousel">
-                <div class="announcement-card">
-                    <h3>中秋烤肉活動</h3>
-                    <p>9月10日晚上7點在中庭舉辦中秋烤肉活動，歡迎住戶參加！</p>
-                    <small>2025年9月8日</small>
+            <!-- Service Modules -->
+            <section class="modules-grid">
+                <div class="module-card" onclick="navigateToModule('announcements')">
+                    <div class="material-icons module-icon">campaign</div>
+                    <h3>公告/投票</h3>
+                    <p>查看最新社區公告和參與投票活動</p>
                 </div>
-                <div class="announcement-card">
-                    <h3>電梯維護通知</h3>
-                    <p>A棟電梯將於9月15日進行定期維護，請住戶多加留意。</p>
-                    <small>2025年9月7日</small>
+                <div class="module-card" onclick="navigateToModule('maintenance')">
+                    <div class="material-icons module-icon">build</div>
+                    <h3>設備/維護</h3>
+                    <p>報修設備問題和查看維護進度</p>
                 </div>
-                <div class="announcement-card">
-                    <h3>管理費調整</h3>
-                    <p>因應物價上漲，管理費將於10月起調整，詳情請見公告。</p>
-                    <small>2025年9月5日</small>
+                <div class="module-card" onclick="navigateToModule('finance')">
+                    <div class="material-icons module-icon">account_balance</div>
+                    <h3>管理費/收支</h3>
+                    <p>查看管理費繳費狀況和收支明細</p>
                 </div>
-            </div>
-        </section>
-
-        <!-- Service Modules -->
-        <section class="modules-grid">
-            <div class="module-card" onclick="navigateToModule('announcements')">
-                <div class="material-icons module-icon">campaign</div>
-                <h3>公告/投票</h3>
-                <p>查看最新社區公告和參與投票活動</p>
-            </div>
-            <div class="module-card" onclick="navigateToModule('maintenance')">
-                <div class="material-icons module-icon">build</div>
-                <h3>設備/維護</h3>
-                <p>報修設備問題和查看維護進度</p>
-            </div>
-            <div class="module-card" onclick="navigateToModule('finance')">
-                <div class="material-icons module-icon">account_balance</div>
-                <h3>管理費/收支</h3>
-                <p>查看管理費繳費狀況和收支明細</p>
-            </div>
-            <div class="module-card" onclick="navigateToModule('residents')">
-                <div class="material-icons module-icon">people</div>
-                <h3>住戶/人員</h3>
-                <p>住戶資料管理和人員聯絡資訊</p>
-            </div>
-            <div class="module-card" onclick="navigateToModule('visitors')">
-                <div class="material-icons module-icon">how_to_reg</div>
-                <h3>訪客/包裹</h3>
-                <p>訪客登記和包裹收發管理</p>
-            </div>
-            <div class="module-card" onclick="navigateToModule('meetings')">
-                <div class="material-icons module-icon">event</div>
-                <h3>會議/活動</h3>
-                <p>社區會議記錄和活動安排</p>
-            </div>
-        </section>
-
-        <!-- Emergency Services -->
-        <section class="emergency-section">
-            <h2 class="section-title">
-                <span class="material-icons">emergency</span>
-                緊急服務
-            </h2>
-            <div class="emergency-grid">
-                <div class="emergency-card">
-                    <span class="material-icons" style="font-size: 2rem; color: #fff;">local_hospital</span>
-                    <div>
-                        <h3>救護車 119</h3>
-                        <p>只要撥打119，就能立即呼叫救護車應急狀況</p>
-                    </div>
-                    <button class="btn btn-emergency" onclick="callEmergency('119')">
-                        <span class="material-icons">call</span>
-                        撥打
-                    </button>
+                <div class="module-card" onclick="navigateToModule('residents')">
+                    <div class="material-icons module-icon">people</div>
+                    <h3>住戶/人員</h3>
+                    <p>住戶資料管理和人員聯絡資訊</p>
                 </div>
-                <div class="emergency-card">
-                    <span class="material-icons" style="font-size: 2rem; color: #fff;">report_problem</span>
-                    <div>
-                        <h3>報警</h3>
-                        <p>有緊急狀況有報警需求，保障住戶的安全</p>
-                    </div>
-                    <button class="btn btn-emergency" onclick="callEmergency('110')">
-                        <span class="material-icons">call</span>
-                        撥打
-                    </button>
+                <div class="module-card" onclick="navigateToModule('visitors')">
+                    <div class="material-icons module-icon">how_to_reg</div>
+                    <h3>訪客/包裹</h3>
+                    <p>訪客登記和包裹收發管理</p>
                 </div>
-            </div>
-        </section>
-    </main>
+                <div class="module-card" onclick="navigateToModule('meetings')">
+                    <div class="material-icons module-icon">event</div>
+                    <h3>會議/活動</h3>
+                    <p>社區會議記錄和活動安排</p>
+                </div>
+            </section>   
+        </main>
+    </div>
 
     <!-- Supabase JS -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -383,8 +406,8 @@
     <script>
         // Supabase configuration
         const SUPABASE_URL = "https://oyydhfvgtmghvnbkvczr.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWRoZnZndG1naHZuYmt2Y3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTMwMTIsImV4cCI6MjA3MzE2OTAxMn0.fgz_Vl7bZ1rtrttOAQcTlymMgHfhiY2NDo3qEnBT1og";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWRoZnZndG1naHZuYmt2Y3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTMwMTIsImV4cCI6MjA3MzE2OTAxMn0.fgz_Vl7bZ1rtrttOAQcTlymMgHfhiY2NDo3qEnBT1og";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // Check authentication status
         async function checkAuth() {
@@ -441,41 +464,11 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             }
         }
 
-        function createAIChatButton() {
-            const chatButton = document.createElement('div');
-            chatButton.innerHTML = `
-                <div style="
-                    position: fixed;
-                    bottom: 20px;
-                    right: 20px;
-                    width: 60px;
-                    height: 60px;
-                    background: var(--accent-color);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
-                    transition: all 0.3s ease;
-                    z-index: 1000;
-                " onclick="openAIChat()" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                    <span class="material-icons" style="color: var(--primary-color); font-size: 1.5rem;">smart_toy</span>
-                </div>
-            `;
-            document.body.appendChild(chatButton);
-        }
-
-        function openAIChat() {
-            window.open('ai-chat.html', '_blank', 'width=400,height=600');
-        }
-
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize on page load
+        window.onload = () => {
             checkAuth();
             loadAnnouncements();
-            createAIChatButton();
-        });
+        };
     </script>
 </body>
 </html>
