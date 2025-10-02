@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>後台管理（可編輯）- 社區管理系統</title>
+  <title>後台管理- 社區管理系統</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -16,13 +15,54 @@
       --success:#4caf50; --danger:#f44336; --card-bg:rgba(45,45,45,.85);
       --border: rgba(255,215,0,.25);
     }
-    *{box-sizing:border-box} html,body{margin:0}
-    body{font-family:'Roboto',sans-serif;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));color:var(--text-primary)}
+    *{box-sizing:border-box}
+    
+    /* Viewport constraints - prevent page scrolling */
+    html,body{
+      margin:0;
+      padding:0;
+      height:100vh;
+      overflow:hidden;
+    }
+    
+    body{
+      font-family:'Roboto',sans-serif;
+      background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+      color:var(--text-primary);
+      display:flex;
+    }
+    
     .hidden{display:none!important}
 
-    /* Sidebar */
-    .sidebar{width:280px;background:rgba(45,45,45,.95);backdrop-filter:blur(8px);border-right:2px solid var(--accent-color);
-      position:fixed;inset:0 auto 0 0;overflow:auto;padding:2rem 0;transition:.3s}
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 99;
+      backdrop-filter: blur(4px);
+    }
+    
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    .sidebar{
+      width:280px;
+      background:rgba(45,45,45,.95);
+      backdrop-filter:blur(8px);
+      border-right:2px solid var(--accent-color);
+      position:fixed;
+      top:0;
+      left:0;
+      height:100vh;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:2rem 0;
+      transition:.3s;
+      z-index:100;
+      flex-shrink:0;
+    }
     .sidebar-header{padding:0 2rem 1.5rem;border-bottom:1px solid rgba(255,215,0,.3);margin-bottom:1.5rem}
     .sidebar-title{color:var(--accent-color);font-weight:700;font-size:1.3rem}
     .user-info{display:flex;gap:12px;align-items:center;margin-top:10px}
@@ -31,30 +71,52 @@
     .nav-link{display:flex;gap:12px;align-items:center;padding:12px 20px;color:var(--text-primary);text-decoration:none;border-left:3px solid transparent;transition:.2s}
     .nav-link:hover,.nav-link.active{background:rgba(255,215,0,.1);border-left-color:var(--accent-color);color:var(--accent-color)}
 
-    /* Main + header (match front-end style) */
+    /* Main container with viewport constraints */
     .main {
       margin-left: 280px;
-      min-height: 100vh;
-      transition: all 0.3s ease;
       width: calc(100% - 280px);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+      overflow: hidden;
     }
     .main.expanded {
       margin-left: 0;
       width: 100%;
     }
+    
     .sidebar.collapsed {
       transform: translateX(-100%);
     }
-    .main{margin-left:280px;min-height:100vh}
-    header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--primary-color);border-bottom:1px solid rgba(255,215,0,.2);position:sticky;top:0;z-index:20}
+    
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:10px 14px;
+      background:var(--primary-color);
+      border-bottom:1px solid rgba(255,215,0,.2);
+      flex-shrink:0;
+    }
     .page-title{display:flex;gap:8px;align-items:center;color:var(--accent-color);font-weight:700}
-    .menu{cursor:pointer}
+    .menu{cursor:pointer;padding:4px;border-radius:4px;transition:0.2s}
+    .menu:hover{background:rgba(255,215,0,0.2)}
+    .menu:active{transform:scale(0.95)}
     .header-actions{display:flex;gap:8px}
     .header-actions button{display:flex;gap:6px;align-items:center;border:none;border-radius:8px;padding:8px 12px;background:var(--accent-color);color:#222;cursor:pointer;font-weight:600}
     .header-actions button.secondary{background:transparent;border:1px solid var(--accent-color);color:var(--text-primary)}
     .header-actions button:hover{filter:brightness(.95)}
 
-    .content{padding:16px}
+    /* Content area scrolls internally */
+    .content{
+      flex:1;
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:16px;
+      min-height:0;
+    }
+    
     .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
     .card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:14px}
     .stat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
@@ -62,7 +124,26 @@
     .muted{color:var(--text-secondary)}
     .section-title{display:flex;gap:8px;align-items:center;color:var(--accent-color);margin-bottom:10px}
 
-    /* CRUD table - polished */
+    /* Carousel with fixed height */
+    .carousel-container{
+      position:relative;
+      width:100%;
+      height:280px;
+      overflow:hidden;
+      border-radius:14px;
+      margin-bottom:20px;
+      flex-shrink:0;
+    }
+    
+    .carousel-slide{position:absolute;width:100%;height:100%;opacity:0;transition:opacity 0.8s ease-in-out;background-size:cover;background-position:center;display:flex;align-items:flex-end;padding:30px}
+    .carousel-slide.active{opacity:1}
+    .carousel-content{background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);padding:20px;border-radius:12px;width:100%}
+    .carousel-title{font-size:1.8rem;font-weight:700;color:var(--accent-color);margin-bottom:10px}
+    .carousel-text{color:var(--text-primary);margin-bottom:10px;line-height:1.6}
+    .carousel-indicators{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10}
+    .carousel-indicator{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.5);cursor:pointer;transition:0.3s}
+    .carousel-indicator.active{background:var(--accent-color);width:30px;border-radius:6px}
+
     .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
     .btn{display:flex;gap:6px;align-items:center;border:1px solid var(--accent-color);background:transparent;color:var(--text-primary);
       padding:8px 10px;border-radius:10px;cursor:pointer}
@@ -71,43 +152,217 @@
     .btn.danger{border-color:var(--danger);color:var(--danger)}
     .btn.danger:hover{background:var(--danger);color:#fff}
 
-    .table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--border)}
+    /* Table wrapper with flexible height */
+    .table-wrap{
+      overflow:auto;
+      flex:1;
+      min-height:300px;
+      border-radius:12px;
+      border:1px solid var(--border);
+    }
+    
     table{width:100%;border-collapse:separate;border-spacing:0}
-    thead th{position:sticky;top:0;background:rgba(255,255,255,.06);backdrop-filter:blur(2px)}
+    thead th{position:sticky;top:0;background:rgba(255,255,255,.06);backdrop-filter:blur(2px);z-index:1}
     th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
     tbody tr:nth-child(odd){background:rgba(255,255,255,.02)}
     tbody tr:hover{background:rgba(255,255,255,.04)}
     td .field{width:100%}
     input[type="text"],input[type="number"],textarea,select{
-      width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.06);
+      width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(255,215,255,.06);
       color:var(--text-primary);outline:none}
     textarea{min-height:88px;resize:vertical}
     input[type="number"]{text-align:right}
     .actions{display:flex;gap:6px;flex-wrap:wrap}
 
-    @media (max-width:768px){
-      .main{margin-left:0}
-      .sidebar{transform:translateX(-100%)}
-      .sidebar.open{transform:translateX(0)}
+    .file-upload-cell{display:flex;flex-direction:column;gap:6px}
+    .file-upload-btn{padding:6px 10px;background:rgba(255,215,0,0.2);border:1px solid var(--accent-color);border-radius:8px;cursor:pointer;font-size:0.85rem;text-align:center}
+    .file-upload-btn:hover{background:rgba(255,215,0,0.3)}
+    .file-preview-small{max-width:100px;max-height:100px;border-radius:6px;margin-top:4px}
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 260px;
+      }
+      
+      .main {
+        margin-left: 260px;
+        width: calc(100% - 260px);
+      }
+      
+      .carousel-container {
+        height: 250px;
+      }
+      
+      .stats {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+      
+      .table-wrap {
+        overflow-x: auto;
+      }
+      
+      table {
+        min-width: 800px;
+      }
     }
 
-  .quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-  .emergency-action{
-    background:rgba(45,45,45,.85);
-    border:2px solid #f44336;
-    border-radius:12px;
-    padding:16px;
-    text-align:center;
-    cursor:pointer;
-    font-weight:bold;
-    color:#f44336;
-  }
-  .emergency-action:hover{background:rgba(244,67,54,0.2)}
+    @media (max-width:768px){
+      .main{margin-left:0;width:100%}
+      .sidebar{transform:translateX(-100%);width:75vw;max-width:320px}
+      .sidebar.open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,0.5)}
+      
+      header {
+        padding: 12px 10px;
+      }
+      
+      .page-title {
+        font-size: 1.1rem;
+      }
+      
+      .menu {
+        background: rgba(255,215,0,0.15);
+        padding: 6px;
+        border-radius: 6px;
+      }
+      
+      .header-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      
+      .header-actions button {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+      }
+      
+      .header-actions button .material-icons {
+        font-size: 18px;
+      }
+      
+      .content {
+        padding: 12px;
+      }
+      
+      .carousel-container {
+        height: 220px;
+        border-radius: 10px;
+      }
+      
+      .carousel-content {
+        padding: 15px;
+      }
+      
+      .carousel-title {
+        font-size: 1.3rem;
+      }
+      
+      .carousel-text {
+        font-size: 0.9rem;
+      }
+      
+      .stats {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      
+      .card {
+        padding: 12px;
+      }
+      
+      .section-title {
+        font-size: 1.2rem;
+      }
+      
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .toolbar .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      table {
+        min-width: 1000px;
+        font-size: 0.85rem;
+      }
+      
+      th, td {
+        padding: 8px;
+      }
+      
+      .quick {
+        grid-template-columns: 1fr;
+      }
+      
+      .emergency-action {
+        padding: 14px;
+      }
+    }
 
+    @media (max-width: 480px) {
+      .sidebar {
+        width: 85vw;
+        max-width: none;
+      }
+      
+      .header-actions button span:not(.material-icons) {
+        display: none;
+      }
+      
+      .carousel-container {
+        height: 200px;
+      }
+      
+      .carousel-title {
+        font-size: 1.1rem;
+      }
+      
+      .carousel-text {
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+      
+      table {
+        font-size: 0.8rem;
+      }
+      
+      th, td {
+        padding: 6px;
+      }
+      
+      input[type="text"],
+      input[type="number"],
+      textarea,
+      select {
+        font-size: 0.85rem;
+        padding: 6px 8px;
+      }
+    }
 
+    .quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+    .emergency-action{
+      background:rgba(45,45,45,.85);
+      border:2px solid #f44336;
+      border-radius:12px;
+      padding:16px;
+      text-align:center;
+      cursor:pointer;
+      font-weight:bold;
+      color:#f44336;
+    }
+    .emergency-action:hover{background:rgba(244,67,54,0.2)}
   </style>
 </head>
 <body>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">社區管理系統</div>
@@ -120,14 +375,16 @@
       </div>
     </div>
     <ul class="nav-menu">
-      <li><a class="nav-link active" href="#" data-section="dashboard"><span class="material-icons">dashboard</span> 儀表板</a></li>
-      <li><a class="nav-link" href="#" data-section="announcements"><span class="material-icons">campaign</span> 公告/投票</a></li>
+      <li><a class="nav-link active" href="#" data-section="dashboard"><span class="material-icons">dashboard</span> 首頁</a></li>
+      <li><a class="nav-link" href="#" data-section="announcements"><span class="material-icons">campaign</span> 公告管理</a></li>
+      <li><a class="nav-link" href="#" data-section="votes"><span class="material-icons">how_to_vote</span> 投票管理</a></li>
       <li><a class="nav-link" href="#" data-section="maintenance"><span class="material-icons">build</span> 設備/維護</a></li>
       <li><a class="nav-link" href="#" data-section="finance"><span class="material-icons">account_balance</span> 管理費/收支</a></li>
       <li><a class="nav-link" href="#" data-section="residents"><span class="material-icons">people</span> 住戶/人員</a></li>
-      <li><a class="nav-link" href="#" data-section="visitors"><span class="material-icons">how_to_reg</span> 訪客/包裹</a></li>
+      <li><a class="nav-link" href="#" data-section="packages"><span class="material-icons">inventory_2</span> 包裹管理</a></li>
+      <li><a class="nav-link" href="#" data-section="visitors"><span class="material-icons">how_to_reg</span> 訪客管理</a></li>
       <li><a class="nav-link" href="#" data-section="meetings"><span class="material-icons">event</span> 會議/活動</a></li>
-      <li><a class="nav-link" href="#" data-section="emergencies"><span class="material-icons">emergency</span> 緊急</a></li>
+      <li><a class="nav-link" href="#" data-section="emergencies"><span class="material-icons">emergency</span> 緊急事件</a></li>
     </ul>
   </nav>
 
@@ -135,7 +392,7 @@
     <header>
       <div class="page-title">
         <span class="material-icons menu" onclick="toggleSidebar()">menu</span>
-        <span id="pageTitle">儀表板</span>
+        <span id="pageTitle">首頁</span>
       </div>
       <div class="header-actions">
         <button class="secondary" onclick="location.href='dashboard.html'"><span class="material-icons">home</span> 返回前台</button>
@@ -145,50 +402,39 @@
 
     <div class="content">
       <section id="dashboardSection">
-        <div class="stats">
-          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">campaign</span><div class="stat-value" id="announcementCount">0</div></div><div class="muted">本月公告</div></div>
-          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">build</span><div class="stat-value" id="maintenanceCount">0</div></div><div class="muted">待處理維修</div></div>
-          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">people</span><div class="stat-value" id="residentCount">0</div></div><div class="muted">住戶總數</div></div>
-          <div class="card"><div class="stat-header"><span class="material-icons" style="color:var(--accent-color)">event</span><div class="stat-value" id="eventCount">0</div></div><div class="muted">本月活動</div></div>
+        <!-- Add carousel for announcements on admin homepage -->
+        <div class="carousel-container" id="announcementCarousel">
+          <div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">載入中...</div>
         </div>
 
         <div class="card" style="margin-top:12px">
-          <h2 class="section-title"><span class="material-icons">campaign</span> 最新公告</h2>
-          <div id="recentAnnouncements"><div class="muted">載入中...</div></div>
+          <h2 class="section-title">
+            <span class="material-icons" style="color:#f44336;">emergency</span>
+            <span style="color:#f44336;font-weight:bold">緊急事件</span>
+          </h2>
+          <div class="quick">
+            <div class="emergency-action" onclick="confirmEmergency('救護車119','醫療緊急狀況')">
+              <div class="material-icons" style="color:#f44336;">local_hospital</div>
+              <h3 style="color:#f44336;font-weight:bold">救護車 119</h3>
+            </div>
+            <div class="emergency-action" onclick="confirmEmergency('報警110','治安緊急狀況')">
+              <div class="material-icons" style="color:#f44336;">report_problem</div>
+              <h3 style="color:#f44336;font-weight:bold">報警 110</h3>
+            </div>
+            <div class="emergency-action" onclick="confirmEmergency('AED','需要AED急救設備')">
+              <div class="material-icons" style="color:#f44336;">favorite</div>
+              <h3 style="color:#f44336;font-weight:bold">AED</h3>
+            </div>
+            <div class="emergency-action" onclick="confirmEmergency('可疑人員','陌生人員闖入警告')">
+              <div class="material-icons" style="color:#f44336;">warning</div>
+              <h3 style="color:#f44336;font-weight:bold">陌生人員闖入</h3>
+            </div>
+          </div>
         </div>
-      
-  <div class="card" style="margin-top:12px">
-    <h2 class="section-title">
-      <span class="material-icons" style="color:#f44336;">emergency</span>
-      <span style="color:#f44336;font-weight:bold">緊急事件</span>
-    </h2>
-    <div class="quick">
-      <div class="emergency-action" onclick="confirmEmergency('救護車119','醫療緊急狀況')">
-        <div class="material-icons" style="color:#f44336;">local_hospital</div>
-        <h3 style="color:#f44336;font-weight:bold">救護車 119</h3>
-      </div>
-      <div class="emergency-action" onclick="confirmEmergency('報警110','治安緊急狀況')">
-        <div class="material-icons" style="color:#f44336;">report_problem</div>
-        <h3 style="color:#f44336;font-weight:bold">報警 110</h3>
-      </div>
-      <div class="emergency-action" onclick="confirmEmergency('AED','需要AED急救設備')">
-        <div class="material-icons" style="color:#f44336;">favorite</div>
-        <h3 style="color:#f44336;font-weight:bold">AED</h3>
-      </div>
-      <div class="emergency-action" onclick="confirmEmergency('可疑人員','陌生人員闖入警告')">
-        <div class="material-icons" style="color:#f44336;">warning</div>
-        <h3 style="color:#f44336;font-weight:bold">陌生人員闖入</h3>
-      </div>
-    </div>
-  </div>
+      </section>
 
-</section>
-
-      
+      <section id="dynamicSection" class="hidden"></section>
     </div>
-    <section id="dynamicSection" class="hidden"></section>
-    </div>
-
   </main>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -197,16 +443,36 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWRoZnZndG1naHZuYmt2Y3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTMwMTIsImV4cCI6MjA3MzE2OTAxMn0.fgz_Vl7bZ1rtrttOAQcTlymMgHfhiY2NDo3qEnBT1og";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let currentUser=null;
+    let carouselInterval = null;
+    let currentSlide = 0;
 
     function toggleSidebar(){
       const sidebar=document.getElementById('sidebar');
+      const overlay=document.getElementById('sidebarOverlay');
       const main=document.querySelector('.main');
+      
       if(window.innerWidth<=768){
         sidebar.classList.toggle('open');
-        main.classList.toggle('expanded');
+        overlay.classList.toggle('active');
+        // Prevent body scroll when sidebar is open
+        if(sidebar.classList.contains('open')){
+          document.body.style.overflow = 'hidden';
+        } else {
+          document.body.style.overflow = '';
+        }
       }else{
         sidebar.classList.toggle('collapsed');
         main.classList.toggle('expanded');
+      }
+    }
+    
+    function closeSidebarOnMobile(){
+      if(window.innerWidth <= 768){
+        const sidebar=document.getElementById('sidebar');
+        const overlay=document.getElementById('sidebarOverlay');
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
       }
     }
 
@@ -222,7 +488,7 @@
       }catch(e){ localStorage.removeItem('currentUser'); location.href='auth.html'; return; }
 
       await refreshDashboard();
-      await loadRecentAnnouncements();
+      await loadCarousel();
 
       document.querySelectorAll('.nav-link').forEach(a=>{
         a.addEventListener('click', (ev)=>{
@@ -230,6 +496,7 @@
           document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
           a.classList.add('active');
           showSection(a.dataset.section);
+          closeSidebarOnMobile();
         });
       });
     }
@@ -237,125 +504,341 @@
     async function refreshDashboard(){
       try{
         const firstDayISO = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-        const { count: announcementCount } = await supabase.from('announcements').select('*', { count:'exact', head:true }).eq('status','published').gte('created_at', firstDayISO);
-        document.getElementById('announcementCount').textContent = announcementCount || 0;
-
         const { count: maintenanceCount } = await supabase.from('maintenance').select('*',{ count:'exact', head:true }).in('status',['open','progress','pending','in_progress']);
-        document.getElementById('maintenanceCount').textContent = maintenanceCount || 0;
-
         const { count: residentCount } = await supabase.from('residents').select('*',{ count:'exact', head:true });
-        document.getElementById('residentCount').textContent = residentCount || 0;
-
         const { count: eventCount } = await supabase.from('meetings').select('*',{ count:'exact', head:true }).gte('time', firstDayISO);
-        document.getElementById('eventCount').textContent = eventCount || 0;
       }catch(e){ console.error(e); }
     }
 
-    async function loadRecentAnnouncements(){
+    async function loadCarousel(){
+      if (carouselInterval) clearInterval(carouselInterval);
+      
       try{
-        const { data, error } = await supabase.from('announcements')
-          .select('id, title, content, created_at, author, status')
+        const { data, error } = await supabase
+          .from('announcements')
+          .select('id,title,content,image_url,author,created_at')
           .eq('status','published')
-          .order('created_at', { ascending:false })
+          .order('created_at',{ascending:false})
           .limit(5);
-        const box = document.getElementById('recentAnnouncements');
+        
+        const container = document.getElementById('announcementCarousel');
         if (error) throw error;
-        if (!data || !data.length){ box.innerHTML='<div class="muted">暫無公告</div>'; return; }
-        box.innerHTML = data.map(a=>`
-          <div class="card" style="margin-bottom:10px">
-            <div style="font-weight:700;margin-bottom:4px">${a.title||''}</div>
-            <div class="muted" style="margin:4px 0 8px">${(a.content||'').slice(0,150)}${(a.content||'').length>150?'...':''}</div>
-            <div class="muted" style="display:flex;justify-content:space-between">
-              <span>作者：${a.author||'系統'}</span>
-              <span>${new Date(a.created_at).toLocaleString('zh-TW')}</span>
+        if (!data || !data.length){ 
+          container.innerHTML='<div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">暫無公告</div>'; 
+          return; 
+        }
+
+        container.innerHTML = data.map((a, idx)=>`
+          <div class="carousel-slide ${idx===0?'active':''}" style="background-image:url('${a.image_url || '/placeholder.svg?height=400&width=1200'}')">
+            <div class="carousel-content">
+              <div class="carousel-title">${a.title||''}</div>
+              <div class="carousel-text">${(a.content||'').slice(0,200)}${(a.content||'').length>200?'...':''}</div>
+              <div class="muted">發布者: ${a.author||'系統'} | ${new Date(a.created_at).toLocaleDateString('zh-TW')}</div>
             </div>
           </div>
-        `).join('');
+        `).join('') + `
+          <div class="carousel-indicators">
+            ${data.map((_, idx)=>`<div class="carousel-indicator ${idx===0?'active':''}" onclick="goToSlide(${idx})"></div>`).join('')}
+          </div>
+        `;
+
+        currentSlide = 0;
+        carouselInterval = setInterval(nextSlide, 5000);
       }catch(e){
         console.error(e);
-        document.getElementById('recentAnnouncements').innerHTML = '<div class="muted">公告載入失敗</div>';
+        document.getElementById('announcementCarousel').innerHTML = '<div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">公告載入失敗</div>';
       }
+    }
+
+    function nextSlide(){
+      const slides = document.querySelectorAll('.carousel-slide');
+      const indicators = document.querySelectorAll('.carousel-indicator');
+      if (!slides.length) return;
+      
+      slides[currentSlide].classList.remove('active');
+      indicators[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide + 1) % slides.length;
+      slides[currentSlide].classList.add('active');
+      indicators[currentSlide].classList.add('active');
+    }
+
+    function prevSlide(){
+      const slides = document.querySelectorAll('.carousel-slide');
+      const indicators = document.querySelectorAll('.carousel-indicator');
+      if (!slides.length) return;
+      
+      slides[currentSlide].classList.remove('active');
+      indicators[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+      slides[currentSlide].classList.add('active');
+      indicators[currentSlide].classList.add('active');
+    }
+
+    function goToSlide(index){
+      const slides = document.querySelectorAll('.carousel-slide');
+      const indicators = document.querySelectorAll('.carousel-indicator');
+      if (!slides.length) return;
+      
+      slides[currentSlide].classList.remove('active');
+      indicators[currentSlide].classList.remove('active');
+      currentSlide = index;
+      slides[currentSlide].classList.add('active');
+      indicators[currentSlide].classList.add('active');
     }
 
     function showSection(sec){
       const titleMap = {
-        dashboard:'儀表板', announcements:'公告/投票', maintenance:'維修管理', finance:'帳務/收費',
-        residents:'住戶/人員', visitors:'訪客/包裹', meetings:'會議/活動', emergencies:'緊急（只讀）'
+        dashboard:'儀表板', 
+        announcements:'公告管理', 
+        votes:'投票管理',
+        maintenance:'維修管理', 
+        finance:'帳務/收費',
+        residents:'住戶/人員', 
+        packages:'包裹管理',
+        visitors:'訪客管理', 
+        meetings:'會議/活動', 
+        emergencies:'緊急事件'
       };
       document.getElementById('pageTitle').textContent = titleMap[sec] || '儀表板';
       const dash = document.getElementById('dashboardSection');
       const dyn  = document.getElementById('dynamicSection');
-      if (sec === 'dashboard'){ dash.classList.remove('hidden'); dyn.classList.add('hidden'); return; }
-      dash.classList.add('hidden'); dyn.classList.remove('hidden'); renderCRUD(sec);
+      if (sec === 'dashboard'){ 
+        dash.classList.remove('hidden'); 
+        dyn.classList.add('hidden'); 
+        loadCarousel();
+        return; 
+      }
+      dash.classList.add('hidden'); 
+      dyn.classList.remove('hidden'); 
+      if (carouselInterval) {
+        clearInterval(carouselInterval);
+        carouselInterval = null;
+      }
+      renderCRUD(sec);
     }
 
-    /* CRUD config - with nicer widgets */
     const CFG = {
-      announcements:{table:'announcements', columns:[
-        {key:'title', label:'標題', width:240},
-        {key:'content', label:'內容', type:'textarea', width:420},
-        {key:'author', label:'作者', width:140},
-        {key:'status', label:'狀態', type:'select', options:['draft','published'], width:180},
-      ], orderBy:{key:'created_at', ascending:false}, newRow:()=>({title:'',content:'',author:'',status:'draft'})},
+      announcements:{
+        table:'announcements', 
+        columns:[
+          {key:'title', label:'標題', width:240},
+          {key:'content', label:'內容', type:'textarea', width:420},
+          {key:'image_url', label:'輪播圖片', type:'image', width:200},
+          {key:'author', label:'作者', width:140},
+          {key:'status', label:'狀態', type:'select', options:['draft','published'], width:180},
+        ], 
+        orderBy:{key:'created_at', ascending:false}, 
+        newRow:()=>({title:'',content:'',image_url:'',author:'',status:'draft'})
+      },
 
-      maintenance:{table:'maintenance', columns:[
-        {key:'equipment', label:'設備', width:160},
-        {key:'item',      label:'項目', width:200},
-        {key:'status',    label:'狀態', type:'select', options:['open','progress','pending','in_progress','closed'], width:220},
-        {key:'handler',   label:'承辦', width:140},
-        {key:'assignee',  label:'指派', width:140},
-        {key:'cost',      label:'費用', type:'number', width:120},
-      ], orderBy:{key:'created_at', ascending:false}, newRow:()=>({equipment:'',item:'',status:'open',handler:'',assignee:'',cost:0})},
+      votes:{
+        table:'votes', 
+        columns:[
+          {key:'title', label:'投票標題', width:240},
+          {key:'description', label:'說明', type:'textarea', width:300},
+          {key:'options', label:'選項(JSON陣列)', type:'textarea', width:280},
+          {key:'author', label:'發起人', width:140},
+          {key:'ends_at', label:'截止時間', width:180},
+          {key:'status', label:'狀態', type:'select', options:['active','closed'], width:140},
+        ],
+        orderBy:{key:'created_at', ascending:false},
+        newRow:()=>({
+          title:'', 
+          description:'', 
+          options:'["同意","反對","棄權"]', 
+          author:'', 
+          ends_at: new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0],
+          status:'active'
+        })
+      },
 
-      finance:{table:'fees', columns:[
-        {key:'room',   label:'房號', width:100},
-        {key:'amount', label:'金額', type:'number', width:120},
-        {key:'due',    label:'到期(YYYY-MM-DD)', width:180},
-        {key:'invoice',label:'發票', width:160},
-        {key:'paid',   label:'已繳', type:'select', options:[false,true], width:120},
-      ], orderBy:{key:'due', ascending:true}, newRow:()=>({room:'',amount:0,due:'',invoice:'',paid:false})},
+      maintenance:{
+        table:'maintenance', 
+        columns:[
+          {key:'equipment', label:'設備', width:160},
+          {key:'item', label:'項目', width:200},
+          {key:'description', label:'描述', type:'textarea', width:260},
+          {key:'photo_url', label:'照片', type:'image', width:180},
+          {key:'reported_by', label:'報修人', width:120},
+          {key:'status', label:'狀態', type:'select', options:['open','progress','pending','in_progress','closed'], width:220},
+          {key:'handler', label:'承辦', width:140},
+          {key:'assignee', label:'指派', width:140},
+          {key:'cost', label:'費用', type:'number', width:120},
+        ], 
+        orderBy:{key:'created_at', ascending:false}, 
+        newRow:()=>({equipment:'',item:'',description:'',photo_url:'',reported_by:'',status:'open',handler:'',assignee:'',cost:0})
+      },
 
-      residents:{table:'residents', columns:[
-        {key:'name',  label:'姓名', width:140},
-        {key:'room',  label:'房號', width:100},
-        {key:'phone', label:'電話', width:160},
-        {key:'email', label:'Email', width:220},
-        {key:'role',  label:'身分', type:'select', options:['resident','committee','vendor','admin'], width:220},
-      ], orderBy:{key:'created_at', ascending:false}, newRow:()=>({name:'',room:'',phone:'',email:'',role:'resident'})},
+      finance:{
+        table:'fees', 
+        columns:[
+          {key:'room', label:'房號', width:100},
+          {key:'amount', label:'金額', type:'number', width:120},
+          {key:'due', label:'到期(YYYY-MM-DD)', width:180},
+          {key:'invoice', label:'發票', width:160},
+          {key:'paid', label:'已繳', type:'select', options:[false,true], width:120},
+        ], 
+        orderBy:{key:'due', ascending:true}, 
+        newRow:()=>({room:'',amount:0,due:'',invoice:'',paid:false})
+      },
 
-      visitors:{table:'visitors', columns:[
-        {key:'name', label:'姓名', width:140},
-        {key:'room', label:'房號', width:100},
-        {key:'in',   label:'進場', ro:true, width:150},
-        {key:'out',  label:'離場', ro:true, width:150},
-      ], orderBy:{key:'created_at', ascending:false}, newRow:()=>({name:'',room:''})},
+      residents:{
+        table:'residents', 
+        columns:[
+          {key:'name', label:'姓名', width:140},
+          {key:'room', label:'房號', width:100},
+          {key:'phone', label:'電話', width:160},
+          {key:'email', label:'Email', width:220},
+          {key:'role', label:'身分', type:'select', options:['resident','committee','vendor','admin'], width:220},
+        ], 
+        orderBy:{key:'created_at', ascending:false}, 
+        newRow:()=>({name:'',room:'',phone:'',email:'',role:'resident'})
+      },
 
-      meetings:{table:'meetings', columns:[
-        {key:'topic',   label:'主題', width:220},
-        {key:'time',    label:'時間(YYYY-MM-DD HH:mm)', width:220},
-        {key:'location',label:'地點', width:200},
-        {key:'notes',   label:'備註', type:'textarea', width:260},
-      ], orderBy:{key:'time', ascending:false}, newRow:()=>({topic:'',time:'',location:'',notes:''})},
+      packages:{
+        table:'packages',
+        columns:[
+          {key:'recipient_name', label:'收件人', width:140},
+          {key:'recipient_room', label:'房號', width:100},
+          {key:'courier', label:'快遞公司', width:140},
+          {key:'tracking_number', label:'追蹤號碼', width:180},
+          {key:'arrived_at', label:'到達時間', width:180},
+          {key:'status', label:'狀態', type:'select', options:['pending','picked-up'], width:140},
+          {key:'notes', label:'備註', type:'textarea', width:200},
+        ],
+        orderBy:{key:'arrived_at', ascending:false},
+        newRow:()=>({recipient_name:'',recipient_room:'',courier:'',tracking_number:'',arrived_at:new Date().toISOString(),status:'pending',notes:''})
+      },
 
-      emergencies:{table:'emergencies', columns:[
-        {key:'type', label:'類型', ro:true, width:160},
-        {key:'time', label:'時間', ro:true, width:160},
-        {key:'by',   label:'使用者', ro:true, width:180},
-        {key:'note', label:'紀錄', ro:true, width:300},
-      ], orderBy:{key:'time', ascending:false}, newRow:null, readonly:true}
+      visitors:{
+        table:'visitors', 
+        columns:[
+          {key:'name', label:'姓名', width:140},
+          {key:'room', label:'房號', width:100},
+          {key:'in', label:'進場', ro:true, width:150},
+          {key:'out', label:'離場', ro:true, width:150},
+        ], 
+        orderBy:{key:'created_at', ascending:false}, 
+        newRow:()=>({name:'',room:''})
+      },
+
+      meetings:{
+        table:'meetings', 
+        columns:[
+          {key:'topic', label:'主題', width:220},
+          {key:'time', label:'時間(YYYY-MM-DD HH:mm)', width:220},
+          {key:'location', label:'地點', width:200},
+          {key:'notes', label:'備註', type:'textarea', width:260},
+        ], 
+        orderBy:{key:'time', ascending:false}, 
+        newRow:()=>({topic:'',time:'',location:'',notes:''})
+      },
+
+      emergencies:{
+        table:'emergencies', 
+        columns:[
+          {key:'type', label:'類型', ro:true, width:160},
+          {key:'time', label:'時間', ro:true, width:160},
+          {key:'by', label:'使用者', ro:true, width:180},
+          {key:'note', label:'紀錄', ro:true, width:300},
+        ], 
+        orderBy:{key:'time', ascending:false}, 
+        newRow:null, 
+        readonly:true
+      }
     };
 
-    function editor(col, value, ro){
+    function editor(col, value, ro, rowId){
       const v = value ?? '';
       if (col.ro || ro) return `<div class="muted">${(v+'')}</div>`;
+      
+      if (col.type === 'image') {
+        const uniqueId = `${col.key}-${rowId}-${Date.now()}`;
+        return `
+          <div class="file-upload-cell">
+            <input type="file" id="file-${uniqueId}" accept="image/*" style="display:none" onchange="handleImageUpload(event, '${col.key}', '${uniqueId}')">
+            <label for="file-${uniqueId}" class="file-upload-btn">選擇圖片</label>
+            <input type="text" class="field" data-key="${col.key}" value="${v}" placeholder="圖片URL或base64" style="margin-top:6px;font-size:0.75rem">
+            ${v && v !== 'NULL' ? `<img src="${v}" class="file-preview-small" alt="預覽" onerror="this.style.display='none'">` : ''}
+          </div>
+        `;
+      }
+      
       if (col.type === 'textarea') return `<textarea class="field" data-key="${col.key}">${v}</textarea>`;
-      if (col.type === 'number')   return `<input class="field" data-key="${col.key}" type="number" step="any" value="${v}">`;
-      if (col.type === 'select')   return `<select class="field" data-key="${col.key}">${(col.options||[]).map(opt=>{
+      if (col.type === 'number') return `<input class="field" data-key="${col.key}" type="number" step="any" value="${v}">`;
+      if (col.type === 'select') return `<select class="field" data-key="${col.key}">${(col.options||[]).map(opt=>{
         const ov = (typeof opt==='boolean')? String(opt): opt;
         const sel = (String(v)===String(ov))?'selected':'';
         return `<option value="${ov}" ${sel}>${ov}</option>`;
       }).join('')}</select>`;
       return `<input class="field" data-key="${col.key}" type="text" value="${v}">`;
+    }
+
+    async function handleImageUpload(event, key, uniqueId){
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('圖片檔案過大，請選擇小於 5MB 的圖片');
+        event.target.value = '';
+        return;
+      }
+
+      try{
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target.result;
+          
+          const cell = event.target.closest('.file-upload-cell');
+          const textInput = cell.querySelector(`input[data-key="${key}"][type="text"]`);
+          if (textInput) {
+            textInput.value = dataUrl;
+          }
+          
+          let preview = cell.querySelector('.file-preview-small');
+          if (!preview) {
+            preview = document.createElement('img');
+            preview.className = 'file-preview-small';
+            preview.alt = '預覽';
+            preview.onerror = function() { this.style.display = 'none'; };
+            cell.appendChild(preview);
+          }
+          preview.src = dataUrl;
+          preview.style.display = 'block';
+        };
+        
+        reader.onerror = () => {
+          alert('圖片讀取失敗，請重試');
+          event.target.value = '';
+        };
+        
+        reader.readAsDataURL(file);
+      }catch(e){
+        console.error('[v0] Image upload error:', e);
+        alert('圖片上傳失敗: ' + e.message);
+        event.target.value = '';
+      }
+    }
+
+    function collectRow(cfg, tr){
+      const obj = {};
+      cfg.columns.forEach(col=>{
+        const el = tr.querySelector(`[data-col="${col.key}"] [data-key="${col.key}"]`);
+        if (!el) return;
+        let v = el.value;
+        
+        if (col.type === 'image' && (!v || v === 'NULL' || v.trim() === '')) {
+          v = null;
+        }
+        
+        if (col.type==='number') v = Number(v||0);
+        if (col.type==='select' && (col.options||[]).includes(true)) {
+          if (v==='true') v = true; 
+          if (v==='false') v = false;
+        }
+        obj[col.key] = v;
+      });
+      return obj;
     }
 
     async function renderCRUD(key){
@@ -368,7 +851,6 @@
           <div class="toolbar">
             ${cfg.readonly ? '' : `<button class="btn success" id="btnAdd"><span class="material-icons">add</span> 新增一筆</button>`}
             <button class="btn" id="btnReload"><span class="material-icons">sync</span> 重新整理</button>
-            
           </div>
           <div class="table-wrap">
             <table>
@@ -384,7 +866,8 @@
         </div>`;
 
       document.getElementById('btnReload').onclick = ()=> loadRows(cfg);
-      const addBtn = document.getElementById('btnAdd'); if (addBtn) addBtn.onclick = ()=> addNewRow(cfg);
+      const addBtn = document.getElementById('btnAdd'); 
+      if (addBtn) addBtn.onclick = ()=> addNewRow(cfg);
       await loadRows(cfg);
     }
 
@@ -395,29 +878,38 @@
         if (cfg.orderBy) q = q.order(cfg.orderBy.key, { ascending: cfg.orderBy.ascending });
         const { data, error } = await q.limit(1000);
         if (error) throw error;
-        if (!data || !data.length){ body.innerHTML = `<tr><td colspan="${cfg.columns.length+1}" class="muted">目前無資料</td></tr>`; return; }
+        if (!data || !data.length){ 
+          body.innerHTML = `<tr><td colspan="${cfg.columns.length+1}" class="muted">目前無資料</td></tr>`; 
+          return; 
+        }
         body.innerHTML = data.map(row=>{
-          const cells = cfg.columns.map(col=>`<td data-col="${col.key}">${editor(col, row[col.key], col.ro)}</td>`).join('');
+          const cells = cfg.columns.map(col=>`<td data-col="${col.key}">${editor(col, row[col.key], col.ro, row.id)}</td>`).join('');
           return `<tr data-id="${row.id||''}">${cells}
             <td class="actions">
               ${cfg.readonly ? '' : `
                 <button class="btn success" data-act="save"><span class="material-icons">save</span> 儲存</button>
                 <button class="btn danger" data-act="remove"><span class="material-icons">delete</span> 刪除</button>`}
               ${cfg.table==='visitors' && !cfg.readonly ? `<button class="btn" data-act="checkout"><span class="material-icons">logout</span> 簽出</button>` : ''}
+              ${cfg.table==='packages' && !cfg.readonly && row.status==='pending' ? `<button class="btn" data-act="pickup"><span class="material-icons">check</span> 已領取</button>` : ''}
             </td></tr>`;
         }).join('');
         body.querySelectorAll('[data-act]').forEach(btn=>{
-          const tr=btn.closest('tr'); const id=tr.getAttribute('data-id')||null; const act=btn.getAttribute('data-act');
+          const tr=btn.closest('tr'); 
+          const id=tr.getAttribute('data-id')||null; 
+          const act=btn.getAttribute('data-act');
           btn.onclick=()=> rowAction(cfg, act, tr, id);
         });
-      }catch(e){ console.error(e); body.innerHTML = `<tr><td colspan="${cfg.columns.length+1}" class="muted">載入失敗</td></tr>`; }
+      }catch(e){ 
+        console.error(e); 
+        body.innerHTML = `<tr><td colspan="${cfg.columns.length+1}" class="muted">載入失敗</td></tr>`; 
+      }
     }
 
     function addNewRow(cfg){
       if (!cfg.newRow) return;
       const body = document.getElementById('crudBody');
       const row = cfg.newRow();
-      const cells = cfg.columns.map(col=>`<td data-col="${col.key}">${editor(col, row[col.key], col.ro)}</td>`).join('');
+      const cells = cfg.columns.map(col=>`<td data-col="${col.key}">${editor(col, row[col.key], col.ro, 'new')}</td>`).join('');
       const tr = document.createElement('tr');
       tr.innerHTML = `${cells}
         <td class="actions">
@@ -431,21 +923,6 @@
       });
     }
 
-    function collectRow(cfg, tr){
-      const obj = {};
-      cfg.columns.forEach(col=>{
-        const el = tr.querySelector(`[data-col="${col.key}"] [data-key="${col.key}"]`);
-        if (!el) return;
-        let v = el.value;
-        if (col.type==='number') v = Number(v||0);
-        if (col.type==='select' && (col.options||[]).includes(true)) { // handle boolean select string -> boolean
-          if (v==='true') v = true; if (v==='false') v = false;
-        }
-        obj[col.key] = v;
-      });
-      return obj;
-    }
-
     async function rowAction(cfg, act, tr, id){
       try{
         if (act==='cancel'){ tr.remove(); return; }
@@ -453,73 +930,124 @@
           if (!id){ tr.remove(); return; }
           if (!confirm('確定要刪除此筆資料？')) return;
           const { error } = await supabase.from(cfg.table).delete().eq('id', id);
-          if (error) throw error; tr.remove(); return;
+          if (error) throw error; 
+          tr.remove(); 
+          return;
         }
         if (act==='checkout' && cfg.table==='visitors'){
           const { error } = await supabase.from('visitors').update({ out:new Date().toISOString() }).eq('id', id);
-          if (error) throw error; await loadRows(cfg); return;
+          if (error) throw error; 
+          await loadRows(cfg); 
+          return;
+        }
+        if (act==='pickup' && cfg.table==='packages'){
+          const { error } = await supabase.from('packages').update({ 
+            status:'picked-up',
+            picked_up_at: new Date().toISOString()
+          }).eq('id', id);
+          if (error) throw error; 
+          await loadRows(cfg); 
+          return;
         }
         if (act==='save'){
           const payload = collectRow(cfg, tr);
-          if (id){
-            const { error } = await supabase.from(cfg.table).update(payload).eq('id', id);
-            if (error) throw error;
-          }else{
-            const { data, error } = await supabase.from(cfg.table).insert(payload).select('id').single();
-            if (error) throw error;
-            if (data?.id) tr.setAttribute('data-id', data.id);
+          
+          console.log('[v0] Saving data to table:', cfg.table);
+          console.log('[v0] Payload keys:', Object.keys(payload));
+          console.log('[v0] Image URL length:', payload.image_url ? payload.image_url.length : 0);
+          
+          // Show loading indicator
+          const saveBtn = tr.querySelector('[data-act="save"]');
+          const originalText = saveBtn.innerHTML;
+          saveBtn.innerHTML = '<span class="material-icons">hourglass_empty</span> 儲存中...';
+          saveBtn.disabled = true;
+          
+          try {
+            if (id){
+              console.log('[v0] Updating existing row with id:', id);
+              const { data, error } = await supabase.from(cfg.table).update(payload).eq('id', id).select();
+              if (error) {
+                console.error('[v0] Update error:', error);
+                throw error;
+              }
+              console.log('[v0] Update successful:', data);
+            }else{
+              console.log('[v0] Inserting new row');
+              const { data, error } = await supabase.from(cfg.table).insert(payload).select('id').single();
+              if (error) {
+                console.error('[v0] Insert error:', error);
+                throw error;
+              }
+              console.log('[v0] Insert successful:', data);
+              if (data?.id) tr.setAttribute('data-id', data.id);
+            }
+            
+            alert('儲存成功！');
+            await loadRows(cfg);
+            await refreshDashboard();
+            
+            // Reload carousel if we're editing announcements
+            if (cfg.table === 'announcements') {
+              await loadCarousel();
+            }
+          } catch(saveError) {
+            console.error('[v0] Save operation failed:', saveError);
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+            throw saveError;
           }
-          await refreshDashboard();
+          
           return;
         }
-      }catch(e){ console.error(e); alert('操作失敗，請稍後再試'); }
+      }catch(e){ 
+        console.error('[v0] rowAction error:', e); 
+        alert('操作失敗，請稍後再試: ' + e.message); 
+      }
     }
 
-function confirmEmergency(type, note){
-  if (confirm(`確定要送出「${type}」事件嗎？`)) {
-    triggerEmergency(type, note);
-  }
-}
-
-async function triggerEmergency(type, note){
-  if (!currentUser){ alert("尚未登入"); return; }
-  try{
-    const payload = {
-      type: type,
-      note: note,
-      time: new Date().toISOString(),
-      ["by"]: currentUser.name || '未知'
-    };
-
-    const { data, error } = await supabase.from('emergencies').insert([payload]).select();
-    if (error) {
-      console.error("Supabase insert error:", error);
-      alert("送出失敗：" + error.message);
-      return;
+    function confirmEmergency(type, note){
+      if (confirm(`確定要送出「${type}」事件嗎？`)) {
+        triggerEmergency(type, note);
+      }
     }
 
-    // 可選：若你的頁面上有 #emergencyList，可即時把新紀錄插到最上方
-    if (data && data.length > 0){
-      const x = data[0];
-      const el = document.getElementById('emergencyList');
-      const item = `
-        <div class="announcement-item" style="border-left:4px solid #f44336;">
-          <div class="announcement-title" style="color:#f44336;font-weight:bold">${x.type}</div>
-          <div class="muted">${x.note||''}</div>
-          <div class="announcement-meta">
-            <span>使用者:${x.by||'-'}</span>
-            <span>${new Date(x.time).toLocaleString('zh-TW')}</span>
-          </div>
-        </div>
-      `;
-      if (el) el.innerHTML = item + el.innerHTML;
-    }
-  }catch(e){
-    console.error("triggerEmergency exception:", e);
-    alert("送出失敗：" + e.message);
-  }
-}
+    async function triggerEmergency(type, note){
+      if (!currentUser){ alert("尚未登入"); return; }
+      try{
+        const payload = {
+          type: type,
+          note: note,
+          time: new Date().toISOString(),
+          ["by"]: currentUser.name || '未知'
+        };
 
+        const { data, error } = await supabase.from('emergencies').insert([payload]).select();
+        if (error) {
+          console.error("Supabase insert error:", error);
+          alert("送出失敗：" + error.message);
+          return;
+        }
+
+        if (data && data.length > 0){
+          const x = data[0];
+          const el = document.getElementById('emergencyList');
+          const item = `
+            <div class="announcement-item" style="border-left:4px solid #f44336;">
+              <div class="announcement-title" style="color:#f44336;font-weight:bold">${x.type}</div>
+              <div class="muted">${x.note||''}</div>
+              <div class="announcement-meta">
+                <span>使用者:${x.by||'-'}</span>
+                <span>${new Date(x.time).toLocaleString('zh-TW')}</span>
+              </div>
+            </div>
+          `;
+          if (el) el.innerHTML = item + el.innerHTML;
+        }
+      }catch(e){
+        console.error("triggerEmergency exception:", e);
+        alert("送出失敗：" + e.message);
+      }
+    }
 
     function logout(){ localStorage.removeItem('currentUser'); location.href='index.html'; }
   </script>
